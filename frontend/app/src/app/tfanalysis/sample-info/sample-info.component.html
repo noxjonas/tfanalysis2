@@ -1,0 +1,55 @@
+<div *ngIf="samples.length != 0">
+  <div>
+<!--    <button mat-button (click)="groupSamples()">Group samples</button>-->
+    <form [formGroup]="autoGroupingForm">
+      <mat-form-field appearance="fill" >
+        <mat-label>Bulk grouping</mat-label>
+          <mat-select formControlName="bulk" (click)="clearOtherGroupingOptions('bulk')">
+            <mat-option *ngFor="let option of bulkReplicatesOptions" [value]="option.value">
+              {{option.viewValue}}
+            </mat-option>
+          </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Group by every other</mat-label>
+        <input matInput type="number" formControlName="everyOther" (click)="clearOtherGroupingOptions('everyOther')">
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Group by column</mat-label>
+        <mat-select formControlName="column" (click)="clearOtherGroupingOptions('column')">
+          <mat-option *ngFor="let option of columnReplicatesOptions" [value]="option.value">
+            {{option.value}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-button type="submit" (click)="groupSamples()">Group samples</button>
+    </form>
+  </div>
+  <button mat-button (click)="saveSampleInfo()">Save sample info</button>
+  <div>
+    <hot-table class="ht_master"
+      [data]="samples"
+      [settings]="hotSettings"
+      [hotId]="id"
+      licenseKey="non-commercial-and-evaluation"
+      >
+
+      <hot-column data="pos" [readOnly]="true" title="pos"></hot-column>
+      <hot-column data="code" title="code"></hot-column>
+      <hot-column data="name" title="name"></hot-column>
+      <hot-column data="description" title="description"></hot-column>
+      <hot-column data="buffer" title="buffer"></hot-column>
+      <hot-column data="condition" title="condition"></hot-column>
+      <hot-column data="concentration" title="concentration"></hot-column>
+      <hot-column data="unit" title="unit"></hot-column>
+      <hot-column data="group" title="group"></hot-column>
+      <hot-column data="manual_outlier" title="outlier" type="checkbox" class="htCenter"></hot-column>
+      <hot-column data="is_blank" title="blank" type="checkbox" class="htCenter"></hot-column>
+    </hot-table>
+
+  </div>
+
+</div>

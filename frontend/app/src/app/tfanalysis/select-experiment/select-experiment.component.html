@@ -1,0 +1,77 @@
+<div>
+  <button mat-button (click)="showExperiments()">Submit</button>
+  <mat-form-field>
+    <mat-label>Filter</mat-label>
+    <input matInput (keyup)="applyFilter($event)" placeholder="Filter your experiments" #input>
+  </mat-form-field>
+
+  <div class="mat-elevation-z8">
+    <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
+
+
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef> ID </th>
+        <td mat-cell *matCellDef="let row"> {{row.id}} </td>
+      </ng-container>
+
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef> Name </th>
+        <td mat-cell *matCellDef="let row"> {{row.name}} </td>
+      </ng-container>
+
+
+      <ng-container matColumnDef="uploaded">
+        <th mat-header-cell *matHeaderCellDef> Uploaded </th>
+        <td mat-cell *matCellDef="let row"> {{row.uploaded | date:'yyyy-MM-dd hh:mm'}} </td>
+      </ng-container>
+
+
+      <ng-container matColumnDef="user">
+        <th mat-header-cell *matHeaderCellDef> User </th>
+        <td mat-cell *matCellDef="let row"> {{row.user}} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+<!--      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>-->
+
+
+      <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell *matCellDef="let experiment" [attr.colspan]="displayedColumns.length"
+            [ngClass]="{'selected-detail' : experiment.id == selectedExperiment?.id}">
+          <div class="experiment-detail"
+               [@detailExpand]="experiment.expanded ? 'expanded' : 'collapsed'"
+               >
+            <!-- This is where a component could be loaded for an experiment?-->
+            <div>
+              <h4>Notes:</h4>
+              <p>{{experiment.notes}}</p>
+              <h4>Errors:</h4>
+              <p>{{experiment.errors}}</p>
+              <button mat-button (click)="selectExperiment(experiment)">Submit</button>
+
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-row *matRowDef="let experiment; columns: displayedColumns;"
+          class="experiment-row"
+          [class.example-expanded-row]="experiment.expanded"
+          (click)="experiment.expanded = !experiment.expanded"
+          [ngClass]="{'selected' : experiment.id == selectedExperiment?.id}"
+          >
+      </tr>
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="experiment-detail-row"></tr>
+
+
+      <!-- Row shown when there is no matching data. -->
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
+      </tr>
+    </table>
+
+    <mat-paginator [pageSizeOptions]="[10, 25, 100]"></mat-paginator>
+  </div>
+</div>

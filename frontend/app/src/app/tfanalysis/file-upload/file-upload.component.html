@@ -1,0 +1,26 @@
+<div>
+
+  <form [formGroup]="fileUploadForm" (ngSubmit)="onSubmit()">
+    <label>
+      Name:
+      <input type="text" formControlName="name">
+    </label>
+
+    <label>
+      Notes:
+      <input type="text" formControlName="notes">
+    </label>
+
+    <label>
+      user:
+      <textarea type="text" formControlName="user"></textarea>
+    </label>
+
+    <input id="file-input" type="file" formControlName="files" (change)="onFileChange($event)"/>
+    <!--multiple-->
+
+
+    <button mat-button type="submit">Submit</button>
+  </form>
+</div>
+

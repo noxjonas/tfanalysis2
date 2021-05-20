@@ -1,0 +1,32 @@
+<div>
+  <mat-tab-group mat-align-tabs="start">
+    <mat-tab label="ETC">
+      <div>
+        <p>tfanalysis works!</p>
+        <i class="material-icons">attach_file</i>
+        <button (click)="getPath()">copy path</button>
+      </div>
+    </mat-tab>
+    <mat-tab label="Import"><app-file-upload></app-file-upload></mat-tab>
+    <mat-tab label="Select">
+      <ng-template matTabContent>
+        <app-select-experiment></app-select-experiment>
+      </ng-template>
+    </mat-tab>
+    <mat-tab label="Sample info">
+<!--      <ng-template matTabContent>-->
+        <app-sample-info></app-sample-info>
+<!--      </ng-template>-->
+    </mat-tab>
+    <mat-tab label="Processing settings"  >
+      <!--      <ng-template matTabContent>-->
+      <app-processing-settings></app-processing-settings>
+      <!--      </ng-template>-->
+    </mat-tab>
+    <mat-tab label="Transition view"  >
+      <!--      <ng-template matTabContent>-->
+      <app-transition-view></app-transition-view>
+      <!--      </ng-template>-->
+    </mat-tab>
+  </mat-tab-group>
+</div>

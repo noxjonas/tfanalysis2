@@ -1,0 +1,43 @@
+table {
+  width: 100%;
+}
+
+.mat-form-field {
+  font-size: 14px;
+  width: 100%;
+}
+
+td, th {
+  width: 25%;
+}
+
+.experiment-detail {
+  overflow: hidden;
+  display: flex;
+}
+
+tr.experiment-row:not(.example-expanded-row):hover {
+  background: whitesmoke;
+}
+
+tr.experiment-row:not(.example-expanded-row):active {
+  background: #efefef;
+}
+
+.experiment-row td {
+  border-bottom-width: 0;
+  /*background-color: purple;*/
+}
+
+.selected {
+  background-color: #7C4DFF;
+}
+
+.selected-detail {
+  background-color: #eae3ff;
+}
+
+tr.experiment-detail-row {
+  height: 0;
+}
+

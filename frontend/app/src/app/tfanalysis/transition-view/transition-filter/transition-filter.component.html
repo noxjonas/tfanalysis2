@@ -1,0 +1,35 @@
+<div style="margin-left: 30px; margin-top: 30px">
+  <span style="font-size: 20px; margin-bottom: 15px">Sample filters</span>
+
+    <mat-checkbox class="filter-checkbox"
+                  [(ngModel)]="protectBlanks"
+                  (change)="filterSamples($event)">Protect blanks</mat-checkbox>
+
+    <mat-checkbox class="filter-checkbox"
+                  [(ngModel)]="filterOutliers"
+                  (change)="filterSamples($event)">Filter manual outliers</mat-checkbox>
+
+    <mat-checkbox class="filter-checkbox"
+                  [(ngModel)]="invertFilter"
+                  (change)="filterSamples($event)">Invert filter</mat-checkbox>
+    <div>
+
+      <div class="dropdown-filters" *ngFor="let item of filterOptions; let i = index">
+              <mat-form-field appearance="fill">
+                <mat-label>{{item.name}}</mat-label>
+                <mat-select multiple
+                  [formControl]="item.formControl"
+                  (selectionChange)="filterSamples($event)">
+
+                    <mat-option *ngFor="let option of item.options" [value]="option">
+                      {{option || "other"}}
+                    </mat-option>
+
+                </mat-select>
+              </mat-form-field>
+
+      </div>
+    </div>
+
+
+</div>
