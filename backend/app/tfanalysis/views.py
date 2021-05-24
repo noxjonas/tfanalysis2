@@ -3,14 +3,19 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from .models import Experiment, RawData, SampleInfo, DefaultProcessingSettings, ProcessingSettings, ProcessedDsfData
 from .serializers import RawDataSerializer, ExperimentSerializer, SampleInfoSerializer, ProcessingSettingsSerializer, ProcessedDsfDataSerializer
+
+from .models import Parsers, Experiments, InstrumentInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, DefaultPeakProcessingSettings, PeakProcessingSettings
+from .serializers import ParsersSerializer, ExperimentsSerializer
+
+
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from app.main import settings
+from django.conf import settings
 import time
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .parsers import ExampleParser
+from .parsers import *
 from django.db import connections
 import io
 import datetime
@@ -18,6 +23,15 @@ from django.utils import timezone
 from .processors import DsfProcessor
 import pandas as pd
 import json
+import os
+
+
+class FetchParsers(APIView):
+
+    def get(self, request):
+        parsers = Parsers.objects.all()
+        serialised = ParsersSerializer(parsers, many=True)
+        return JsonResponse(serialised.data, safe=False, status=status.HTTP_200_OK)
 
 
 class UploadData(APIView):
@@ -25,28 +39,47 @@ class UploadData(APIView):
     def post(self, request):
         file_objs = request.FILES.getlist('files')
         paths = []
-        file_types = []
         for file_obj in file_objs:
             path = default_storage.save(file_obj.name, ContentFile(file_obj.read()))
             paths.append(settings.MEDIA_ROOT + path)
-            file_types.append('example_'+path.split('.', 1)[1])
 
-        data = ExampleParser(paths)
+        try:
+            # Use the selected parser on all uploaded files
+            constructor = globals()[request.POST.get('parser')]
+            data = constructor(paths)
+            [os.remove(i) for i in paths]  # Cleanup files
 
-        new_experiment = Experiment(
+            parser_validator = ParserValidator(data)
+            if not parser_validator.is_valid:
+                return JsonResponse({'message': 'Parser returned invalid data:', 'info': parser_validator.errors}, status=400)
+
+        except Exception as E:
+            [os.remove(i) for i in paths]  # Cleanup files
+            return JsonResponse({'message': 'Parser failed with following error:', 'info': [str(E)]}, status=400)
+
+        parser = Parsers.objects.filter(python_class_name=request.POST.get('parser'))[0]
+
+        experiment = Experiments(
+            parser=parser,
             name=request.POST.get('name'),
+            project=request.POST.get('project'),
             user=request.POST.get('user'),
             notes=request.POST.get('notes'),
-            file_type='\n'.join(file_types),
-            storage_path='\n'.join(paths),
-            errors='\n'.join(data.errors),
+            parse_warnings=json.dumps(data.warnings) if hasattr(data, 'warnings') else json.dumps({}),
         )
-        new_experiment.save()
+        experiment.save()
+
+        if hasattr(data, 'instrument_info'):
+            instrument_info = InstrumentInfo(
+                experiment=experiment,
+                data_json=json.dumps(data.instrument_info),
+            )
+            instrument_info.save()
 
         bulk = []
         for index, row in data.df.iterrows():
             temp_obj = RawData(
-                experiment=new_experiment,
+                experiment=experiment,
                 data_type=row['data_type'],
                 pos=row['pos'],
                 col_index=row['col_index'],
@@ -58,13 +91,13 @@ class UploadData(APIView):
 
         RawData.objects.bulk_create(bulk)
 
-        imported_raw_data_ids = RawData.objects.filter(experiment=new_experiment.id).values_list('id', flat=True)
-        data.df['raw_data_id'] = imported_raw_data_ids
+        imported_raw_data_ids = list(RawData.objects.filter(experiment=experiment.id).values_list('pos', 'id'))
+        data.df['raw_data_id'] = data.df['pos'].map({k: v for k, v in imported_raw_data_ids})
 
         bulk = []
         for index, row in data.df.iterrows():
             temp_obj = SampleInfo(
-                experiment=new_experiment,
+                experiment=experiment,
                 raw_data=RawData.objects.get(pk=row['raw_data_id']),
                 pos=row['pos'],
                 code='',
@@ -82,65 +115,35 @@ class UploadData(APIView):
 
         SampleInfo.objects.bulk_create(bulk)
 
-        # save default settings; first get the object based on filetype
-        default_settings = DefaultProcessingSettings.objects.get(file_type=file_types[0])
-
-        new_settings = ProcessingSettings(
-            experiment=new_experiment, # I will also get sample info from this
-            #changed=timezone.now(),
-            selected_data_type='fluorescence',
-
-            flat_blank=0, # If blank is set as a number
-            blank_average=0,
-            skip_outliers=True,
-
-            # These can be taken from raw data instead
-            truncate_x_min=default_settings.truncate_x_min,
-            truncate_x_max=default_settings.truncate_x_max,
-
-            interpolation_indices=default_settings.interpolation_indices, # 0.1
-            interpolation_method=default_settings.interpolation_method, # 'linear'
-            interpolation_order=default_settings.interpolation_order, # (can be empty)
-
-            peak_mode=default_settings.peak_mode, # 'positive', 'negative', 'both'
-            peak_derivative_of=default_settings.peak_derivative_of, # 'normalised', 'raw'
-            peak_temp_limit_min=default_settings.peak_temp_limit_min,
-            peak_temp_limit_max=default_settings.peak_temp_limit_max,
-            peak_prominence_min=default_settings.peak_prominence_min,
-            peak_prominence_max=default_settings.peak_prominence_max,
-            peak_distance=default_settings.peak_distance, # will need to convert this to int based on interpolation_indices
-            peak_number_limit=default_settings.peak_number_limit,
-            peak_height_min=default_settings.peak_height_min,
-            peak_height_max=default_settings.peak_height_max,
-            peak_width_min=default_settings.peak_width_min, # not actually used
-            peak_width_max=default_settings.peak_width_max, # not actually used
-            peak_threshold_min=default_settings.peak_threshold_min, # not actually used
-            peak_threshold_max=default_settings.peak_threshold_max, # not actually used
-
-            smoothing_coefficient=default_settings.smoothing_coefficient, #percent
-
-            difference_significance=default_settings.difference_significance,
-
-            x_unit=default_settings.x_unit,
-            y_unit=default_settings.y_unit,
-            x_label=default_settings.x_label,
-            y_label=default_settings.y_label,
+        # Save default settings
+        default_transition_settings = DefaultTransitionProcessingSettings.objects.get(parser=parser)
+        default_transition_settings_dict = {k: v for k, v in default_transition_settings.__dict__.items() if k not in ['_state', 'id', 'parser_id']}
+        new_transition_settings = TransitionProcessingSettings(
+            experiment=experiment,
+            default_settings=default_transition_settings,
+            **default_transition_settings_dict
         )
+        new_transition_settings.save()
 
-        new_settings.save()
+        default_peak_settings = DefaultPeakProcessingSettings.objects.get(parser=parser)
+        default_peak_settings_dict = {k: v for k, v in default_peak_settings.__dict__.items() if k not in ['_state', 'id', 'parser_id']}
+        new_peak_settings = PeakProcessingSettings(
+            experiment=experiment,
+            default_settings=default_peak_settings,
+            **default_peak_settings_dict
+        )
+        new_peak_settings.save()
 
-        return Response({'parse_status': 'success'}, status=status.HTTP_201_CREATED)
+        serializer = ExperimentsSerializer(experiment)
 
-
-
-
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class FetchExperiments(APIView):
 
     def post(self, request):
-        experiments = Experiment.objects.all()
-        serialised = ExperimentSerializer(experiments, many=True)
+        experiments = Experiments.objects.all()
+        serialised = ExperimentsSerializer(experiments, many=True)
 
         return JsonResponse(serialised.data, safe=False, status=status.HTTP_200_OK)
 
@@ -163,15 +166,10 @@ class UpdateSampleInfo(APIView):
         if not serializer.is_valid():
             return Response({'update_status': 'fail'}, status=status.HTTP_400_BAD_REQUEST)
 
-        now = timezone.now()
         for i in serializer.data:
-            print('what is', i)
-
             SampleInfo.objects.filter(pk=i['id']).update(
-                updated=now,
-                # pos=i['pos'], # does not need updating
                 # Using conditionals here since handsontable can return null values
-                code='' if i['code'] is None else i['code'],  # i['code'],
+                code='' if i['code'] is None else i['code'],
                 name='' if i['name'] is None else i['name'],
                 description='' if i['description'] is None else i['description'],
                 buffer='' if i['buffer'] is None else i['buffer'],
@@ -199,16 +197,13 @@ class FetchProcessingSettings(APIView):
 class UpdateProcessingSettings(APIView):
 
     def put(self, request):
-        serializer = ProcessingSettingsSerializer(data=request.data, ignore_fields=('experiment', 'processing_info', 'raw_data'))
+        serializer = ProcessingSettingsSerializer(data=request.data, ignore_fields=['experiment'])
 
         if not serializer.is_valid():
+            print(repr(serializer), '\n\n', serializer.errors)
             return Response({'update_status': 'fail'}, status=status.HTTP_400_BAD_REQUEST)
 
-        now = timezone.now()
-
-        # use 'id' from data as it is lost by serializer due to read-only properties
         ProcessingSettings.objects.filter(pk=serializer.data['id']).update(
-            changed=now,
             **serializer.data
         )
 

@@ -1,5 +1,5 @@
-import {Component, OnInit, Input, OnChanges, SimpleChanges, NgZone, AfterViewInit,Inject, PLATFORM_ID, ViewChild, ElementRef} from '@angular/core';
-import {isPlatformBrowser} from "@angular/common";
+import {Component, OnInit, Input, OnChanges, SimpleChanges, NgZone, AfterViewInit, Inject, PLATFORM_ID, ViewChild, ElementRef} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
 import {
   ChartDataSets,
   ChartType,
@@ -11,54 +11,58 @@ import {
   ChartLegendLabelItem, ChartLegendLabelOptions
 } from 'chart.js';
 import { Label } from 'ng2-charts';
-import {CommonService, TransitionData} from "../../common.service";
-import {SampleInfo} from "../../sample-info/sample-info.component";
+import {CommonService, TransitionData} from '../../common.service';
+import {SampleInfo} from '../../sample-info/sample-info.component';
 
-//import * as uPlot from 'uplot'
+// import * as uPlot from 'uplot'
 
-//import {Series} from "./uPlot";
+// import {Series} from "./uPlot";
 
-//import * as uPlot from "./uPlot"
+// import * as uPlot from "./uPlot"
 
-//import * as uPlot from 'uplot'
+// import * as uPlot from 'uplot'
 
 
 // amCharts imports
 import * as am4core from '@amcharts/amcharts4/core';
 import * as am4charts from '@amcharts/amcharts4/charts';
 import am4themes_animated from '@amcharts/amcharts4/themes/animated';
-import {options} from "@amcharts/amcharts4/core";
+import {options} from '@amcharts/amcharts4/core';
 
-//import uPlot, { Series, Options } from 'uplot';
+// import uPlot, { Series, Options } from 'uplot';
 
-import {UplotGenService} from "./uplot-gen.service";
+import {UplotGenService} from './uplot-gen.service';
 
 // @ts-ignore
 import uPlot from 'uplot';
-//declare const uPlot: any;
-import {Options} from "uplot";
-//import Options from "../../../../../node_modules/uplot/dist/uPlot"
+// declare const uPlot: any;
+import {Options} from 'uplot';
+// import Options from "../../../../../node_modules/uplot/dist/uPlot"
 
 // @ts-ignore
-//import uPlot from 'uPlot';
+// import uPlot from 'uPlot';
 
-//TODO: For speed consider simplifiedProcessing attribute of series
+
+// https://github.com/plotly/angular-plotly.js/blob/master/README.md
+
+// TODO: For speed consider simplifiedProcessing attribute of series
 
 interface RegularTransitionSeriesData {
   // scatter_raw_x: number,
   // scatter_raw_y: number,
-  scatter_regular_x: number,
-  scatter_regular_y: number,
-  scatter_normal_y: number,
-  scatter_smooth_y: number,
-  scatter_first_der_y: number,
+  scatter_regular_x: number;
+  scatter_regular_y: number;
+  scatter_normal_y: number;
+  scatter_smooth_y: number;
+  scatter_first_der_y: number;
 }
 
 interface RegularGenericTransitionData {
-  x: number,
-  y: number,
+  x: number;
+  y: number;
 }
 
+// tslint:disable-next-line:class-name
 interface xy {
   x: number;
   y: number;
@@ -91,11 +95,20 @@ interface GenericColours {
 }
 
 interface SeriesColours {
-  pos: string,
-  color: string,
+  pos: string;
+  color: string;
   [index: string]: string;
 }
 
+interface PlotlyDataObject {
+  x: number[];
+  y: number[];
+  type: string; // 'line', 'scatter' etc.
+  mode: string; // ?
+  marker: {
+    color: string;
+  };
+}
 
 
 @Component({
@@ -111,8 +124,10 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
 
   @ViewChild('chartElement') chartElement: ElementRef<HTMLElement>;
 
+  revision = 0;
 
-  defaultColours = <GenericColours>{
+
+  defaultColours = {
     // Arrays defining each base colour must have identical lengths
     grey : ['#7f7f7f', '#a8a8a8', '#535353', '#939393', '#696969'],
     blue : ['#1f77b4', '#7ba2cd', '#204e74', '#568cc1', '#216293'],
@@ -124,137 +139,191 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
     pink : ['#e377c2', '#efa6d6', '#e98fcc', '#914f7d', '#b9639f'],
     yellow : ['#bcbd22', '#d7d275', '#7a7a1f', '#cac850', '#9a9b21'],
     teal : ['#17becf', '#84d4df', '#227a85', '#5dc9d7', '#209ca9'],
-  }
+  } as GenericColours;
   seriesColours: SeriesColours[] = [];
 
+  public graph = {
+  data: [{
+    x: [1, 2],
+    y: [1, 2],
+    type: 'scatter',
+    mode: 'lines',
+    visible: false,
+    marker: {
+      color: 'red'
+    },
+    meta: 'loading'
+  }],
+  layout: {width: 800, height: 500, title: 'Transition plots'}
+};
+
   constructor(@Inject(PLATFORM_ID) private platformId: any, private zone: NgZone,
-    private commonService: CommonService,
+              private commonService: CommonService,
               private chartBuilder: UplotGenService) {
-    commonService.transitionsProcessed$.subscribe(data => this.ngAfterViewInit())
+    commonService.experimentSelected$.subscribe(data => this.clearChart());
   }
   // Run the function only in the browser
-  browserOnly(f: () => void) {
+  browserOnly(f: () => void): void {
     if (isPlatformBrowser(this.platformId)) {
       this.zone.runOutsideAngular(() => {
         f();
       });
     }
   }
-  ngAfterViewInit() {
+  ngAfterViewInit(): void {
+  }
 
-    function round2(val:any) {
-      return Math.round(val * 100) / 100;
+  ngOnChanges(changes: SimpleChanges): void {
+    console.log('These are the changes that are happening:', changes);
+    // Ignore first changes
+    // if (this.revision < 1) {
+    //   return;
+    // }
+    // Separate into functions that do different things dependent on change
+    if (changes.plotDataType) {
+      console.log('property', changes.plotDataType.currentValue);
+      this.changeChartData(changes.plotDataType.currentValue);
+      // this.changeDataFields()
+      // update plot data
+      // this.generateColors();
+      // this.applyData();
     }
-
-    function round3(val:any) {
-      return Math.round(val * 1000) / 1000;
+    if (changes.filterPosArr) {
+      // react to changes in filters
+      this.filterChartLegend(changes.filterPosArr.currentValue);
     }
+    if (changes.transitionData) {
+      setTimeout(() =>
+        {
+          this.makeChart();
+        },
+        1);
 
-    function prepData(packed:any) {
-      console.time("prep");
+      // apply changes when the data changes
+      // i.e. remake the chart and colouring
 
-      // epoch,idl,recv,send,read,writ,used,free
+    }
+  }
 
-      const numFields = packed[0];
+  makeChart(): void {
+    console.log('this is the data I deal with', this.transitionData);
+    const newData: any[] = [];
+    this.transitionData.forEach(sample => {
+      newData.push({
+        x: sample.scatter_regular_x,
+        y: sample.scatter_regular_y,
+        name: sample.pos,
+        type: 'scatter',
+        mode: 'lines',
+        marker: {
+          color: 'red'
+        },
+        meta: sample.pos,
+      });
+      }
+    );
+    // this.graph.data = newData;
+    this.graph = {
+      data: newData,
+      layout: {width: 800, height: 500, title: 'Transition plots'}
+    };
+    this.filterChartLegend(this.filterPosArr);
+    this.applyColors();
+    //this.revision = 0;
 
-      packed = packed.slice(numFields + 1);
+  }
 
-      // 55,550 data points x 3 series = 166,650
-      let data = [
-        Array(packed.length/numFields),
-        Array(packed.length/numFields),
-        Array(packed.length/numFields),
-        Array(packed.length/numFields),
-      ];
+  clearChart(): void {
+    this.graph.data = [{
+      x: [1, 2],
+      y: [1, 2],
+      type: 'scatter',
+      mode: 'lines',
+      visible: false,
+      marker: {
+        color: 'red'
+      },
+      meta: 'loading'
+    }];
+    this.revision += 1;
+  }
 
-      for (let i = 0, j = 0; i < packed.length; i += numFields, j++) {
-        data[0][j] = packed[i] * 60;	// * 1e3
-        data[1][j] = round3(100 - packed[i+1]);
-        data[2][j] = round2(100 * packed[i+5] / (packed[i+5] + packed[i+6]));
-        data[3][j] = packed[i+3];
+  changeChartData(dataType: string): void {
+    this.graph.data.forEach((data, index) => {
+      // tslint:disable-next-line:no-string-literal
+      data.y = this.transitionData[index]['scatter_' + dataType + '_y'];
+    });
+    this.revision += 1;
+  }
+
+  filterChartLegend(displayedSamples: string[]): void {
+    console.log('display:', displayedSamples);
+    console.log('layout', this.graph);
+
+    const visibility = (pos: string, displayed: string[]) => {
+      return displayed.includes(pos);
+    };
+
+    this.graph.data.forEach((data, index) => {
+      // tslint:disable-next-line:no-string-literal
+      data.visible = displayedSamples.includes(data.meta);
+    });
+    this.revision += 1;
+  }
+
+  applyColors(): void {
+    // Should colours be recalculated based on visible filters?
+    // Probably yes, otherwise you can easily end up with very few distinct colours
+    // Also, filtered samples will not be displayed, so I don't even have to change their colours
+    // Remember to assign, white or any colour to the filtered out samples as this must have the same dimensions
+
+    // Get displayed samples
+    // @ts-ignore
+    const displayedSamples: SampleInfo[] = this.samples.flatMap(x => this.filterPosArr.includes(x.pos) ? x : []);
+    const displayedSamplesPos = displayedSamples.map(x => x.pos);
+
+    // Check if grouping is used; i.e. there must be more than 1 group
+    const groups = [...new Set(displayedSamples.map(x => x.group))].sort();
+    console.log('groups', groups);
+    if (groups.length < 2) {
+      // just make simple array of colours
+      const simpleColourArr = [];
+      for (let i = 0; i < this.defaultColours[Object.keys(this.defaultColours)[0]].length; i++) {
+        for (const prop in this.defaultColours) {
+          if (Object.prototype.hasOwnProperty.call(this.defaultColours, prop)) {
+            simpleColourArr.push(this.defaultColours[prop][i]);
+          }
+        }
+      }
+      // multiply this array to make sure there are enough colours to cover all samples
+      const extendedColourArr: string[] = [];
+      for (let i = 0; i <= Math.ceil( this.samples.length / simpleColourArr.length ); i++) {
+        extendedColourArr.push(...simpleColourArr);
       }
 
-      /*
-        function filter(d) {
-          return d.filter((d, i) => Math.round(i/1000) % 5 != 2);
+      let offset = 0;
+      this.seriesColours = this.samples.map((x, i) => {
+        if (displayedSamplesPos.includes(x.pos)) {
+          return {pos: x.pos, color: extendedColourArr[i + offset]};
+        } else {
+          offset += 1;
+          return {pos: x.pos, color: '#ffffff'};
         }
-        data[0] = filter(data[0]);
-        data[1] = filter(data[1]);
-        data[2] = filter(data[2]);
-        data[3] = filter(data[3]);
-      */
-      /*
-        data[0] = data[0].slice(0, 1000);
-        data[1] = data[1].slice(0, 1000);
-        data[2] = data[2].slice(0, 1000);
-        data[3] = data[3].slice(0, 1000);
-        data[1][35] = null;
-        data[1][36] = null;
-        data[2][730] = null;
-      */
-      console.timeEnd("prep");
+      });
 
-      return data;
+      console.log('colourMap', this.seriesColours);
+    } else {
+      console.log('There are groups');
     }
 
-    function makeChart(data:any) {
-      console.time("chart");
+    this.graph.data.forEach((data, index) => {
+      // tslint:disable-next-line:no-string-literal
+      data.marker.color = this.seriesColours.find(i => i.pos === data.meta).color;
+    });
+    this.revision += 1;
 
-      const opts = {
-        title: "Server Events",
-        width: 1920,
-        height: 600,
-        //	ms:     1,
-        //	cursor: {
-        //		x: false,
-        //		y: false,
-        //	},
-        series: [
-          {},
-          {
-            label: "CPU",
-            scale: "%",
-            value: (u: any, v: any) => v == null ? "-" : v.toFixed(1) + "%",
-            stroke: "red",
-            width: 1 / devicePixelRatio,
-          },
-          {
-            label: "RAM",
-            scale: "%",
-            value: (u: any, v: any) => v == null ? "-" : v.toFixed(1) + "%",
-            stroke: "blue",
-            width: 1 / devicePixelRatio,
-          },
-          {
-            label: "TCP Out",
-            scale: "mb",
-            value: (u:any, v:any) => v == null ? "-" : v.toFixed(2) + " MB",
-            stroke: "green",
-            width: 1 / devicePixelRatio,
-          }
-        ],
-        axes: [
-          {},
-          {
-            scale: "%",
-            values: (u: any, vals: number[], space: any) => vals.map(v => +v.toFixed(1) + "%"),
-          },
-          {
-            side: 1,
-            scale: "mb",
-            size: 60,
-            values: (u: any, vals: number[], space: any) => vals.map(v => +v.toFixed(2) + " MB"),
-            grid: {show: false},
-          },
-        ],
-      };
-      // @ts-ignore
-      this.uplot = new uPlot(opts, data, this.chartElement.nativeElement);
-      // @ts-ignore
-      //let uplot = new uPlot(opts, data, this.chartElement.nativeElement);
-    }
+    // an array should be returned in same order and length as sample info, since pos will be used to map colour
+    //  to both scatter points and the v-lines
   }
-  ngOnChanges() {
 
-  }
 }

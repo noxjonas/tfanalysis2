@@ -4,3 +4,21 @@
   margin: 10px;
   border: 1px solid #555;
 }
+
+/*.container {*/
+/*  display: -webkit-flexbox;*/
+/*  display: -ms-flexbox;*/
+/*  display: -webkit-flex;*/
+/*  display: flex;*/
+/*  -webkit-flex-align: center;*/
+/*  -ms-flex-align: center;*/
+/*  -webkit-align-items: center;*/
+/*  align-items: center;*/
+/*  justify-content: center;*/
+/*}*/
+
+.progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

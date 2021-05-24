@@ -2,7 +2,7 @@
 from django.conf import settings
 
 
-class ExampleAppRouter(object):
+class TfanalysisRouter(object):
     """
     A router to control app1 db operations
     """

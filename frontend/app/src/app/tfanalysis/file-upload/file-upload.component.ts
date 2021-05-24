@@ -1,13 +1,12 @@
-import { Component, OnInit, ViewChild, ElementRef  } from '@angular/core';
-import { HttpEventType, HttpErrorResponse } from '@angular/common/http';
-import { of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import {Component, OnInit, Output, ViewChild} from '@angular/core';
 import { FileUploadService } from './file-upload.service';
-
-import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-
-import { environment } from '../../../environments/environment'
+import {FormGroup, FormControl, FormGroupDirective} from '@angular/forms';
+import { Parsers } from '../common.service';
+import { CommonService } from '../common.service';
+import { Validators } from '@angular/forms';
+import { MatDialog} from '@angular/material/dialog';
+import { UploadErrorDialogComponent } from './upload-error-dialog.component';
+import { EventEmitter } from '@angular/core';
 
 @Component({
   selector: 'app-file-upload',
@@ -15,45 +14,117 @@ import { environment } from '../../../environments/environment'
   styleUrls: ['./file-upload.component.css']
 })
 export class FileUploadComponent implements OnInit {
-  myFiles:string [] = [];
+
+  @Output() rawUploadInProgress$ = new EventEmitter<boolean>();
+  @Output() rawUploadSuccess$ = new EventEmitter<boolean>();
+
+  parsers: Parsers[];
+  selectedParser: Parsers;
+  files: File[] = [];
+  extensionWarning: boolean;
 
   fileUploadForm = new FormGroup({
-    name: new FormControl(''),
+    parser: new FormControl(''),
+    name: new FormControl('', Validators.required),
     user: new FormControl(''),
     notes: new FormControl(''),
     files: new FormControl(''),
+    project: new FormControl(''),
   });
-  // files = new FormControl(Files);
 
-
-  constructor(private fileUploadService: FileUploadService) { }
-
-
-  ngOnInit() {
-
+  constructor(
+    private fileUploadService: FileUploadService,
+    private commonService: CommonService,
+    public uploadErrorDialog: MatDialog
+  ) {
+    this.commonService.parsersReceived$.subscribe( data => {
+        this.parsers = commonService.parsers;
+        this.fileUploadForm.get('parser').setValue(this.parsers.slice(-1)[0].python_class_name);
+    });
   }
 
-  onSubmit() {
-    console.log('this is upload form!', this.fileUploadForm.value.files[0]);
-    console.log('this is my files!', this.myFiles);
-    console.log('this is my name!', this.fileUploadForm.value.name);
-    this.fileUploadService.uploadFile(this.myFiles, this.fileUploadForm)
+  ngOnInit(): void {
+    this.commonService.fetchParsers();
+    this.fileUploadForm.get('parser').valueChanges
+      .subscribe((formValue) => {
+        this.selectedParser = this.parsers.find(i => i.python_class_name === formValue);
+        this.checkExtensions();
+      });
+  }
+
+  onFileDropped(event: any): void {
+    this.prepareFileList(event);
+  }
+  fileBrowseHandler(event: any): void {
+    this.prepareFileList(event.target.files);
+  }
+  prepareFileList(files: any): void {
+
+    for (const file of files) {
+      this.files.push(file);
+    }
+    this.checkExtensions();
+  }
+
+  deleteFile(index: number): void {
+    this.files.splice(index, 1);
+    this.checkExtensions();
+  }
+
+  formatBytes(bytes: any, decimals?: any): string {
+    if (bytes === 0) {
+      return '0 Bytes';
+    }
+    const k = 1024;
+    const dm = decimals <= 0 ? 0 : decimals || 2;
+    const sizes = ['Bytes', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  checkExtensions(): void {
+    for (const file of this.files) {
+      const extension = file.name.split('.').slice(-1)[0];
+      if (!this.selectedParser.accepted_file_types.includes(extension)) {
+        this.extensionWarning = true;
+        return;
+      }
+    }
+    this.extensionWarning = false;
+  }
+
+  onSubmit(): void {
+    if (this.files.length < 1 || !this.fileUploadForm.valid) {
+      return;
+    }
+    this.rawUploadInProgress$.emit(true);
+    this.fileUploadService.uploadRawFiles(this.files, this.fileUploadForm)
           .subscribe(data => {
-            console.log(data)
+            this.rawUploadInProgress$.emit(false);
+            this.commonService.selectExperiment(data);
+            this.rawUploadSuccess$.emit(true);
+            this.resetUploadForm();
+          },
+                    error => {
+            this.rawUploadInProgress$.emit(false);
+            this.openDialog(error.error);
           });
   }
 
-  onFileChange(event: any) {
-    this.myFiles = [];
-    for (let i = 0; i < event.target.files.length; i++) {
-        this.myFiles.push(event.target.files[i]);
+  resetUploadForm(): void {
+    // Custom one since I don't want to lose selected parser
+    for (const formName of ['name', 'user', 'notes', 'files', 'project']) {
+      this.fileUploadForm.get(formName).setValue('');
     }
-    console.log('these are the files', this.myFiles);
+    this.files = [];
   }
 
-}
+  openDialog(error: any): void {
+    const dialogRef = this.uploadErrorDialog.open(UploadErrorDialogComponent, {
+      data: error
+    });
+    dialogRef.afterClosed().subscribe(result => {
+    });
+  }
 
-interface FileToUpload {
-    name: string;
-    file: string;
 }

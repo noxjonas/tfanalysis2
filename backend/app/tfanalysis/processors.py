@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 class DsfProcessor:
 
     def __init__(self, experiment_id, raw_data_df, sample_info_df, processing_settings):
-        # TODO: Implement outlier filter
+        # TODO: Implement outlier filter or do not
         # print('Processing datas:', 'experiment_id', experiment_id)
         # print('raw_data_df', raw_data_df)
         # print('sample_info_df', sample_info_df)
@@ -34,7 +34,6 @@ class DsfProcessor:
         # Regularise the raw data
         self.regularise()
 
-        # TODO: Make selection on front-end
         processing_settings['filter_type'] = 'filtfilt'  # 'savgol', 'filtfilt'
 
         # Smoothen the regular data
@@ -65,7 +64,7 @@ class DsfProcessor:
 
         # Truncate if needed TODO: Implement truncation and/or limits for peak finding
 
-        # And now find the peaks TODO: remove df arg and replace with just regular df? consistency
+        # And now find the peaks TODO: move to a separate class
         self.find_peaks(self.regular_df)
 
         # Generate dict for blank info
@@ -250,10 +249,8 @@ class DsfProcessor:
 
         # TODO: this could be implemented better; currently flat blank is only used if no blanks are selected
         if len(blank_df) == 0:
-            if type(self.processing_settings['flat_blank']) != float:
-                self.blank_average = 0.0
-            else:
-                self.blank_average = self.processing_settings['flat_blank']
+            self.blank_average = 0.0
+
         else:
             # Retrieve top peak values
             blank_values = [v for k, v in self.top_peak_dict.items() if k in blank_df['pos'].to_list()]

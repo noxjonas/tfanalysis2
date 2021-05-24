@@ -1,3 +1,5 @@
+conda env export --from-history > .\backend\app\env.yml
+
 python manage.py makemigrations tfanalysis
 
 python manage.py makemigrations

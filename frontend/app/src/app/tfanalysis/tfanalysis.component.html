@@ -1,13 +1,32 @@
 <div>
-  <mat-tab-group mat-align-tabs="start">
-    <mat-tab label="ETC">
+  <mat-tab-group mat-align-tabs="start"
+                 [selectedIndex]="selectedTab.value"
+                 (selectedIndexChange)="selectedTab.setValue($event)">
+
+    <mat-tab [disabled]="true">
+      <ng-template mat-tab-label>
+        <div *ngIf="loading" class="progress">
+          <mat-spinner [diameter]="30" style="margin-right: 5px"></mat-spinner>
+          <span style="justify-content: center">Processing</span>
+        </div>
+        <div *ngIf="uploading" class="progress">
+          <mat-spinner [diameter]="30" style="margin-right: 5px"></mat-spinner>
+          <span style="justify-content: center">Uploading</span>
+        </div>
+        <div *ngIf="!loading && !uploading" style="display: inline">
+<!--          <mat-spinner [diameter]="30" style="margin-right: 5px"></mat-spinner>-->
+          <span>Idle</span>
+        </div>
+      </ng-template>
       <div>
         <p>tfanalysis works!</p>
         <i class="material-icons">attach_file</i>
-        <button (click)="getPath()">copy path</button>
       </div>
     </mat-tab>
-    <mat-tab label="Import"><app-file-upload></app-file-upload></mat-tab>
+    <mat-tab label="Import"><app-file-upload
+      (rawUploadInProgress$)="onRawUploadProgress($event)"
+      (rawUploadSuccess$)="onRawUploadSuccess($event)"
+    ></app-file-upload></mat-tab>
     <mat-tab label="Select">
       <ng-template matTabContent>
         <app-select-experiment></app-select-experiment>

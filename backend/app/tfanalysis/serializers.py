@@ -1,12 +1,15 @@
 from rest_framework import serializers
 from .models import RawData, Experiment, SampleInfo, ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
-
+from .models import Parsers, Experiments
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
     Custom ModelSerializer that takes ignore_fields argument.
     Used to ignore foreign keys when validating incoming data from frontend
     """
+
+    # This ensures that the serialiser does not lose id from the request (as they are not included in the models)
+    id = serializers.IntegerField(required=False)
 
     def __init__(self, *args, **kwargs):
         # Don't pass the 'ignore_fields' arg up to the superclass
@@ -22,7 +25,22 @@ class DynamicFieldsModelSerializer(serializers.ModelSerializer):
                 self.fields.pop(field_name)
 
 
-#TODO: use ... fields = '__all__'
+class ParsersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parsers
+        fields = '__all__'
+
+
+class ExperimentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Experiments
+        fields = '__all__'
+
+
+
+
+#TODO: Move or remove stuff below
+
 class ProcessedDsfDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcessedDsfData

@@ -1,26 +1,88 @@
-<div>
+<div class="row">
 
-  <form [formGroup]="fileUploadForm" (ngSubmit)="onSubmit()">
-    <label>
-      Name:
-      <input type="text" formControlName="name">
-    </label>
+      <div class="column" style="max-width: 350px">
 
-    <label>
-      Notes:
-      <input type="text" formControlName="notes">
-    </label>
+        <div class="dropzone" appFileUpload (fileDropped)="onFileDropped($event)">
+          <input type="file" #fileDropRef id="fileDropRef" multiple (change)="fileBrowseHandler($event)" />
+          <h3><i style="font-size: 50px; margin-right: 10px" class="material-icons">cloud_upload</i>Drop files here</h3>
 
-    <label>
-      user:
-      <textarea type="text" formControlName="user"></textarea>
-    </label>
+          <label for="fileDropRef">Or click to browse</label>
+        </div>
 
-    <input id="file-input" type="file" formControlName="files" (change)="onFileChange($event)"/>
-    <!--multiple-->
+        <div *ngIf="extensionWarning" class="extension-warning">
+          <b>Warning!</b> One or more files you intend to upload have unsupported extensions for this parser!<br>
+          Supported extensions: {{selectedParser.accepted_file_types.join(', ')}}
+        </div>
+
+        <div *ngIf="selectedParser && !selectedParser.allow_data_merge" class="dataset-number-warning">
+          Only a single dataset should be uploaded for this parser!<br>
+        </div>
+
+        <div class="files-list">
+          <div class="single-file" *ngFor="let file of files; let i = index">
+            <i style="font-size: 25px; margin-right: 10px" class="material-icons">attach_file</i>
+            <div class="info">
+              <h4 class="name">
+                {{ file?.name }}
+              </h4>
+              <p class="size">
+                {{ formatBytes(file?.size) }}
+              </p>
+              <!--        <app-progress [progress]="file?.progress"></app-progress>-->
+            </div>
+            <i (click)="deleteFile(i)" style="font-size: 25px; color: #F44336;" class="material-icons delete">delete</i>
+          </div>
+        </div>
 
 
-    <button mat-button type="submit">Submit</button>
-  </form>
+      </div>
+
+      <div class="column">
+        <form [formGroup]="fileUploadForm" (ngSubmit)="onSubmit()" class="form-column">
+          <div style="display: inline-flex">
+            <mat-form-field appearance="fill">
+              <mat-label>Select raw data parser</mat-label>
+              <!--   Placeholder while waiting for data   -->
+              <mat-select *ngIf="!parsers" [value]="">
+              </mat-select>
+              <mat-select *ngIf="parsers"
+                          (change)="checkExtensions()" formControlName="parser"
+                          >
+                <mat-option *ngFor="let parser of parsers" [value]="parser.python_class_name">
+                  {{parser.name}}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+            <span *ngIf="selectedParser" style="margin-top: 10px; margin-left: 10px; font-size: 16px">{{selectedParser.info}}</span>
+          </div>
+
+          <mat-form-field style="max-width: 300px; margin-top: 10px">
+            <mat-label>Experiment name (required)</mat-label>
+            <input matInput type="text" formControlName="name">
+          </mat-form-field>
+
+          <mat-form-field style="max-width: 300px; margin-top: 10px">
+            <mat-label>Project</mat-label>
+            <input matInput type="text" formControlName="project">
+          </mat-form-field>
+
+          <mat-form-field style="max-width: 300px; margin-top: 10px">
+            <mat-label>User</mat-label>
+            <input matInput type="text" formControlName="user">
+          </mat-form-field>
+
+          <mat-form-field style="max-width: 600px; margin-top: 10px">
+            <mat-label>Notes</mat-label>
+            <textarea matInput type="text" formControlName="notes"></textarea>
+<!--            Button for clearing not implemented. Need to write a function in .ts to clear-->
+<!--            <button mat-button *ngIf="fileUploadForm.value.notes" matSuffix mat-icon-button aria-label="Clear"-->
+<!--                    (click)="fileUploadForm.value.notes=''">-->
+<!--              <mat-icon>close</mat-icon>-->
+<!--            </button>-->
+          </mat-form-field>
+          <button mat-raised-button type="submit" color="primary" style="max-width: 100px">Submit</button>
+        </form>
+      </div>
+
 </div>
 

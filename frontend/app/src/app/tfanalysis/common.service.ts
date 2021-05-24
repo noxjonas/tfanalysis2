@@ -1,12 +1,21 @@
 import { Injectable } from '@angular/core';
-import {EventEmitter} from "@angular/core";
-import {Observable} from "rxjs";
-import {ProcessingSettings} from "./processing-settings/processing-settings.component";
-import {environment} from "../../environments/environment";
-import {HttpClient, HttpHeaders} from "@angular/common/http";
-import {SampleInfo} from "./sample-info/sample-info.component";
-import {sample} from "rxjs/operators";
+import { EventEmitter } from '@angular/core';
+import {Observable} from 'rxjs';
+import {ProcessingSettings} from './processing-settings/processing-settings.component';
+import {environment} from '../../environments/environment';
+import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {SampleInfo} from './sample-info/sample-info.component';
+import {sample} from 'rxjs/operators';
+import {Experiment} from './select-experiment/select-experiment.component';
 
+export class Parsers {
+  python_class_name: string;
+  name: string;
+  info: string;
+  accepted_file_types: string[];
+  available_data_types: string[];
+  allow_data_merge: boolean;
+}
 
 export class SelectedExperiment {
   constructor(
@@ -20,19 +29,19 @@ export class SelectedExperiment {
 }
 
 export interface TransitionData {
-  experiment: number,
-  processing_info: number,
-  raw_data: number,
-  pos: string,
-  scatter_raw_x: number[],
-  scatter_raw_y: number[],
-  scatter_regular_x: number[],
-  scatter_regular_y: number[],
-  scatter_normal_y: number[],
-  scatter_smooth_y: number[],
-  scatter_first_der_y: number[],
-  all_peaks: number[],
-  top_peak: number,
+  experiment: number;
+  processing_info: number;
+  raw_data: number;
+  pos: string;
+  scatter_raw_x: number[];
+  scatter_raw_y: number[];
+  scatter_regular_x: number[];
+  scatter_regular_y: number[];
+  scatter_normal_y: number[];
+  scatter_smooth_y: number[];
+  scatter_first_der_y: number[];
+  all_peaks: number[];
+  top_peak: number;
   [key: string]: any;
 }
 
@@ -59,15 +68,20 @@ export class TransitionData {
   providedIn: 'root'
 })
 export class CommonService {
+  public parsersReceived$: EventEmitter<boolean>;
   public experimentSelected$: EventEmitter<SelectedExperiment>;
   public selected!: SelectedExperiment;
+  public transitionsProcessingStarted$: EventEmitter<boolean>;
   public transitionsProcessed$: EventEmitter<boolean>;
   public transitionData!: TransitionData[];
   public sampleInfoChanged$: EventEmitter<SampleInfo[]>;
   public sampleInfoData!: SampleInfo[];
+  public parsers!: Parsers[];
 
   constructor(private http: HttpClient) {
+    this.parsersReceived$ = new EventEmitter();
     this.experimentSelected$ = new EventEmitter();
+    this.transitionsProcessingStarted$ = new EventEmitter();
     this.transitionsProcessed$ = new EventEmitter();
     this.sampleInfoChanged$ = new EventEmitter();
   }
@@ -75,53 +89,69 @@ export class CommonService {
   public selectExperiment(experiment: SelectedExperiment): SelectedExperiment {
     this.selected = experiment;
     this.experimentSelected$.emit(experiment);
-    return this.selected
+    return this.selected;
   }
 
-  public getSelectedExperiment() {
+  public getSelectedExperiment(): SelectedExperiment {
     return this.selected;
+  }
+
+  private _fetchParsers(): Observable<any> {
+    return this.http.get<Parsers[]>(environment.baseApiUrl + 'tfanalysis/fetchparsers/');
+  }
+
+  public fetchParsers(): void {
+    this._fetchParsers().subscribe(
+      data => {
+        this.parsers = data;
+        this.parsersReceived$.emit(null);
+        console.log('Parser data', data);
+        return;
+      }
+    );
   }
 
   // Need to fix implementation on this, as it should just take data if settings weren't changed?
   // Perhaps post settings and if they haven't changed api will just return already existing processed data
-  private postProcessData() : Observable<any> {
-    const formData = new FormData()
-    formData.append('experiment_id', String(this.selected.id))
-    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/processdata/', formData)
+  private postProcessData(): Observable<any> {
+    this.transitionsProcessingStarted$.emit();
+    const formData = new FormData();
+    formData.append('experiment_id', String(this.selected.id));
+    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/processdata/', formData);
   }
 
-  public fetchProcessedData() {
+  public fetchProcessedData(): void {
     this.postProcessData().subscribe(
       data => {
-        this.transitionData = data
+        this.transitionData = data;
         this.transitionsProcessed$.emit(true);
       }
-    )
+    );
   }
 
   public postSampleInfo(sampleInfo: any): Observable<any> {
-    let httpOptions = {
+    const httpOptions = {
       headers: new HttpHeaders({
         'Content-Type': 'application/json'
       })
     };
-    console.log('what does sample info look like', sampleInfo)
+    console.log('what does sample info look like', sampleInfo);
     this.sampleInfoChanged$.emit(sampleInfo);
     this.sampleInfoData = sampleInfo;
-    return this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/', JSON.stringify(sampleInfo), httpOptions)
+    return this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/', JSON.stringify(sampleInfo), httpOptions);
   }
 
-  _fetchSampleInfo(): Observable<any> {
+  private _fetchSampleInfo(): Observable<any> {
     const selectedExperiment = this.getSelectedExperiment();
-    const formData = new FormData()
-    formData.append('experiment_id', String(selectedExperiment.id))
-    return this.http.post<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/fetchsampleinfo/', formData)
+    const formData = new FormData();
+    formData.append('experiment_id', String(selectedExperiment.id));
+    return this.http.post<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/fetchsampleinfo/', formData);
   }
-  public fetchSampleInfo() {
+  public fetchSampleInfo(): void {
     this._fetchSampleInfo()
       .subscribe(data => {
-        this.sampleInfoData = data
-        //this.commonService.shareSampleInfo(data)
+        this.sampleInfoData = data;
+        // this.commonService.shareSampleInfo(data)
         this.sampleInfoChanged$.emit(data);
       });
   }

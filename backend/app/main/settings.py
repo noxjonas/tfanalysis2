@@ -93,7 +93,7 @@ DATABASES = {
     },
     'tfanalysis': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tfanalysis',
+        'NAME': 'tfanalysis2',
         'USER': 'postgres',
         'PASSWORD': 'password',#'password',
         'HOST': '127.0.0.1', #'database-1.cjahn6poqgmu.eu-west-2.rds.amazonaws.com',#'db-loadbala-1bl60jf0ota2o-415d43edbeeff679.elb.eu-west-2.amazonaws.com', #'127.0.0.1',
@@ -102,8 +102,10 @@ DATABASES = {
 }
 
 DATABASE_ROUTERS = [
-    'tfanalysis.router.ExampleAppRouter'
+    'tfanalysis.router.TfanalysisRouter'
 ]
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 
 # Password validation

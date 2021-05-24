@@ -1,12 +1,11 @@
 import { Component, OnInit, ViewChild, Output } from '@angular/core';
-import {TransitionViewService} from "./transition-view.service";
-import {CommonService} from "../common.service";
-import { TransitionData } from "../common.service";
-import {MatPaginator} from "@angular/material/paginator";
-import {TransitionPlotComponent} from "./transition-plot/transition-plot.component";
-import {SampleInfo, SampleInfoComponent} from "../sample-info/sample-info.component";
+import {TransitionViewService} from './transition-view.service';
+import {CommonService} from '../common.service';
+import { TransitionData } from '../common.service';
+import {MatPaginator} from '@angular/material/paginator';
+import {TransitionPlotComponent} from './transition-plot/transition-plot.component';
+import {SampleInfo, SampleInfoComponent} from '../sample-info/sample-info.component';
 import {FormControl, FormGroup, FormArray} from '@angular/forms';
-
 
 
 
@@ -27,31 +26,31 @@ export class TransitionViewComponent implements OnInit {
               // private sampleInfoComponent: SampleInfoComponent
   ) {
     commonService.transitionsProcessed$.subscribe(data => this.ngOnInit());
-    commonService.experimentSelected$.subscribe(experiment => this.ngOnInit())
+    commonService.experimentSelected$.subscribe(experiment => this.ngOnInit());
     commonService.sampleInfoChanged$.subscribe(data => {
       this.samples = data;
     });
   }
 
   ngOnInit(): void {
-    this.plotDataType = 'regular'
+    this.plotDataType = 'regular';
     if (this.commonService.selected) {
       this.importTransitionData();
-      //this.makeFilters(this.commonService.sampleInfoData)
+      // this.makeFilters(this.commonService.sampleInfoData)
     }
   }
 
-  sharePosFilter(data: any) {
+  sharePosFilter(data: any): void {
     this.filterPosArr = data;
   }
 
-  importTransitionData() {
+  importTransitionData(): void {
     this.transitionData = this.commonService.transitionData;
     console.log('delivered from common service', this.transitionData);
-    //this.plot.transitionData = this.transitionData;
+    // this.plot.transitionData = this.transitionData;
   }
-  testCall() {
-    console.log('selected data:', this.plotDataType)
+  testCall(): void {
+    console.log('selected data:', this.plotDataType);
   }
 
 }

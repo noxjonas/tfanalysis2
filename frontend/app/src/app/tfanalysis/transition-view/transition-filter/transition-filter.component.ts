@@ -32,6 +32,7 @@ export class TransitionFilterComponent implements OnInit, OnChanges {
               private commonService: CommonService,
               private _fb: FormBuilder
   ) {
+    // commonService.sampleInfoChanged$.subscribe(data => this.ngOnInit());
     // commonService.sampleInfoChanged$.subscribe(data => {
     //   this.samples = data;
     //   this.makeFilters(data);
@@ -39,15 +40,16 @@ export class TransitionFilterComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    this.makeFilters(this.samples);
-    this.filterSamples(null);
+    // this.makeFilters(this.samples);
+    // this.filterSamples(null);
     // if (this.commonService.selected) {
     //   this.makeFilters(this.commonService.sampleInfoData)
     // }
   }
   ngOnChanges(changes: SimpleChanges) {
     if (changes.samples) {
-      this.makeFilters(this.samples)
+      this.makeFilters(this.samples);
+      this.filterSamples(null);
     }
   }
 
@@ -97,11 +99,12 @@ export class TransitionFilterComponent implements OnInit, OnChanges {
     this.filterOptions = [];
     // @ts-ignore
     const columnData = Object.fromEntries(Object.keys(data[0]).map(key => [key, data.map(o => o[key])]))
-
+    const collator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
     for (let prop in columnData) {
       if (Object.prototype.hasOwnProperty.call(columnData, prop)) {
         if (this.legitColumns.includes(prop)) {
-          let unique = [...new Set(columnData[prop])].sort();
+          // @ts-ignore
+          let unique = [...new Set(columnData[prop])].sort(collator.compare);
           // push the 'other' values to the back -> it's renamed in template
           if (unique.includes("")) {
             unique.push(unique.splice(unique.indexOf(""), 1)[0]);

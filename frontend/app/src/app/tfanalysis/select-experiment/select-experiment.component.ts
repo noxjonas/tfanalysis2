@@ -7,6 +7,8 @@ import {CommonService} from "../common.service";
 import {SelectedExperiment} from "../common.service";
 import {ProcessingSettings, ProcessingSettingsComponent} from "../processing-settings/processing-settings.component";
 
+
+
 export interface Experiment {
   id: number;
   name: string;
