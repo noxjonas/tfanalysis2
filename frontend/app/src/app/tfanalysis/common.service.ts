@@ -6,9 +6,9 @@ import {environment} from '../../environments/environment';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {SampleInfo} from './sample-info/sample-info.component';
 import {sample} from 'rxjs/operators';
-import {Experiment} from './select-experiment/select-experiment.component';
 
-export class Parsers {
+
+export interface Parsers {
   python_class_name: string;
   name: string;
   info: string;
@@ -17,15 +17,18 @@ export class Parsers {
   allow_data_merge: boolean;
 }
 
-export class SelectedExperiment {
-  constructor(
-    public id: number,
-    public name: string,
-    public uploaded: string,
-    public user: string,
-    public notes: string,
-    public errors: string,
-  ) {}
+export interface Experiment {
+  id: number;
+  parser: string;
+  uploaded: string;
+  updated: string;
+  name: string;
+  project: string;
+  user: string;
+  notes: string;
+  instrument_info?: string;
+  parse_warnings?: string;
+  expanded?: false;
 }
 
 export interface TransitionData {
@@ -69,8 +72,8 @@ export class TransitionData {
 })
 export class CommonService {
   public parsersReceived$: EventEmitter<boolean>;
-  public experimentSelected$: EventEmitter<SelectedExperiment>;
-  public selected!: SelectedExperiment;
+  public experimentSelected$: EventEmitter<Experiment>;
+  public selected!: Experiment;
   public transitionsProcessingStarted$: EventEmitter<boolean>;
   public transitionsProcessed$: EventEmitter<boolean>;
   public transitionData!: TransitionData[];
@@ -86,13 +89,13 @@ export class CommonService {
     this.sampleInfoChanged$ = new EventEmitter();
   }
 
-  public selectExperiment(experiment: SelectedExperiment): SelectedExperiment {
+  public selectExperiment(experiment: Experiment): Experiment {
     this.selected = experiment;
     this.experimentSelected$.emit(experiment);
     return this.selected;
   }
 
-  public getSelectedExperiment(): SelectedExperiment {
+  public getSelectedExperiment(): Experiment {
     return this.selected;
   }
 
@@ -105,7 +108,6 @@ export class CommonService {
       data => {
         this.parsers = data;
         this.parsersReceived$.emit(null);
-        console.log('Parser data', data);
         return;
       }
     );

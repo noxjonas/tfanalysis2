@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { FormGroup } from '@angular/forms';
-import {SelectedExperiment} from '../common.service';
+import { Experiment } from '../common.service';
 
 
 @Injectable({
@@ -23,7 +23,7 @@ export class FileUploadService {
     formData.append('user', info.value.user);
     formData.append('project', info.value.project);
     formData.append('notes', info.value.notes);
-    return this.http.post<SelectedExperiment>(environment.baseApiUrl + 'tfanalysis/upload/', formData);
+    return this.http.post<Experiment>(environment.baseApiUrl + 'tfanalysis/upload/', formData);
   }
 }
 

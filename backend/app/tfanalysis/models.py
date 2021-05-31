@@ -49,7 +49,7 @@ class Experiments(models.Model):
     user = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     screen = models.TextField(blank=True)
-
+    instrument_info = models.JSONField(blank=True)
     parse_warnings = models.JSONField(blank=True)
 
     class Meta:

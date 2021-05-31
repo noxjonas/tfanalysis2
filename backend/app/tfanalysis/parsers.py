@@ -141,6 +141,7 @@ class DummyParser:
         # Mandatory
         self.df = pd.DataFrame(columns=['pos', 'data_type', 'col_index', 'row_index', 'raw_x', 'raw_y'])
 
+        # TODO: Convert these dictionaries to types viable for visualisation. i.e. nest them
         # Example
         self.instrument_info = {'Instrument': 'qPCR', 'Filter': 'SYPRO Orange'}
         # Example
@@ -159,13 +160,13 @@ class ExampleCsvParser(DummyParser):
     }
 
     def __init__(self, paths):
-        self.warnings = {'Position not found': [], 'Length discrepancy': []}
+        self.warnings = ['Position Z11 not found'] #{'Position not found': ['A02', 'B03'], 'Length discrepancy': ['A01']}
         self.data_type = 'fluorescence'
         self.file_df = pd.read_csv(paths[0])
         self.make_valid_pos()
         self.read_example_csv()
 
-        self.instrument_info = {'Instrument': '', 'Filter': 'SYPRO Orange'}
+        self.instrument_info = ['Crappy machine', 'No filter'] #{'Instrument': 'important instrument', 'Filter': 'SYPRO Orange'}
 
     def make_valid_pos(self):
         self.plate_rows = list(string.ascii_uppercase)
@@ -187,6 +188,7 @@ class ExampleCsvParser(DummyParser):
         if pos is None:
             return None
         else:
+            # Short is bad! i.e. change 'A1' to 'A01'
             if pos in self.short_pos_names:
                 pos = self.normal_pos_names_dict[pos]
         return pos
@@ -201,11 +203,12 @@ class ExampleCsvParser(DummyParser):
             pos = self.find_pos(','.join(col_name_pair))
 
             if pos is None:
-                self.warnings['Position not found'].append(
+                self.warnings.append(
                     'no valid sample position found in column names ({})'
                     .format(','.join(col_name_pair))
                 )
-                print('Data import warning: no valid sample position found in column names ({})')
+                print('Data import warning: no valid sample position found in column names ({})'
+                      .format(','.join(col_name_pair)))
                 continue
 
             # Get well index
@@ -216,7 +219,7 @@ class ExampleCsvParser(DummyParser):
             raw_y = df[col_name_pair[1]].values
 
             if len(raw_y) != len(raw_x):
-                self.warnings['Length discrepancy'].append(
+                self.warnings.append(
                     'x and y entries have different lengths in columns ({})'
                     .format(','.join(col_name_pair))
                 )
@@ -235,7 +238,7 @@ class ExampleCsvParser(DummyParser):
         self.df = pd.concat(df_list, ignore_index=True)
 
 
-# TODO: This validator is not for data per se. Hence I should check if other attributes of the custom parser are valid
+# TODO: This validator is not for data per se. Hence I should check if other attributes of the custom parser are valid?
 # TODO: Check default settings dicts? But these will fail to be included in the database anyway
 class ParserValidator:
 
@@ -266,16 +269,16 @@ class ParserValidator:
                 # The remaining checks would fail, hence it stops checking here
                 return
 
-            # Check uniqueness of indexes and data_type
-            unique_len = len(df.groupby(['col_index', 'row_index', 'data_type']))
-            if len(df) != unique_len:
-                self.errors.append(f'Uniqueness of samples by indexes is ambiguous. Length of dataframe is {str(len(df))}, but {str(unique_len)} unique samples counted')
-                self.is_valid = False
-
-            # Check uniqueness of pos and data_type
+            # Check uniqueness by pos and data_type
             unique_len = len(df.groupby(['pos', 'data_type']))
             if len(df) != unique_len:
                 self.errors.append(f'Uniqueness of samples by position is ambiguous. Length of dataframe is {str(len(df))}, but {str(unique_len)} unique samples counted')
+                self.is_valid = False
+
+            # Check uniqueness by indexes and data_type
+            unique_len = len(df.groupby(['col_index', 'row_index', 'data_type']))
+            if len(df) != unique_len:
+                self.errors.append(f'Uniqueness of samples by indexes is ambiguous. Length of dataframe is {str(len(df))}, but {str(unique_len)} unique samples counted')
                 self.is_valid = False
 
             # Check if all entries per column have the same type and it is legit
@@ -290,11 +293,13 @@ class ParserValidator:
                     if list(types)[0] in [str(i) for i in _types]:
                         self.errors.append(f'Column {col} contains entries of {list(types)[0]}, but {" or ".join([str(i) for i in _types])} is expected')
                         self.is_valid = False
+                        # TODO: Check whether values in list are floats or convertible as such
 
             # Check if x and y are same length in each sample
             for index, row in df.iterrows():
                 if len(row['raw_x']) != len(row['raw_y']):
-                    self.errors.append(f"Sample at position {row['pos']} contains raw_x and raw_y entries of different lengths")
+                    self.errors.append(f"Sample at position {row['pos']} contains raw_x and raw_y entries of different lengths:"
+                                       f"raw_x is {len(row['raw_x'])} long and raw_y is {len(row['raw_y'])}")
                     self.is_valid = False
 
     class InstrumentInfo:
@@ -303,19 +308,19 @@ class ParserValidator:
             self.is_valid = True
 
             # Check if instrument_info really is a dict
-            if type(instrument_info) != dict:
-                self.errors.append('Instrument info is not a dictionary')
+            if type(instrument_info) != list:
+                self.errors.append('Instrument info is not a list')
                 self.is_valid = False
                 return
 
-            # Check if keys and values are strings
-            for k, v in instrument_info.items():
-                if type(k) != str:
-                    self.errors.append(f'Instrument info key {str(k)} is not a string')
-                    self.is_valid = False
-                if type(v) != str:
-                    self.errors.append(f'Instrument info value {str(v)} in key {str(k)} is not a string')
-                    self.is_valid = False
+            # # Check if keys and values are strings
+            # for k, v in instrument_info.items():
+            #     if type(k) != str:
+            #         self.errors.append(f'Instrument info key {str(k)} is not a string')
+            #         self.is_valid = False
+            #     if type(v) != str:
+            #         self.errors.append(f'Instrument info value {str(v)} in key {str(k)} is not a string')
+            #         self.is_valid = False
 
     class Warnings:
         def __init__(self, warnings):
@@ -323,25 +328,25 @@ class ParserValidator:
             self.is_valid = True
 
             # Check if warnings really is a dict
-            if type(warnings) != dict:
-                self.errors.append('Parser warnings is not a dictionary')
+            if type(warnings) != list:
+                self.errors.append('Parser warnings is not a list')
                 self.is_valid = False
                 return
 
-            # Check if keys and values are valid types
-            for k, v in warnings.items():
-                if type(k) != str:
-                    self.errors.append(f'Parser warnings key {str(k)} is not a string')
-                    self.is_valid = False
-                if type(v) != list:
-                    self.errors.append(f'Parser warnings value {str(v)} in key {str(k)} is not a list')
-                    self.is_valid = False
-                else:
-                    # Check if entries within the list are all strings
-                    for i in v:
-                        if type(i) != str:
-                            self.errors.append(f'Parser warnings value {str(v)} in key {str(k)} contains entry {str(i)} that is not string')
-                            self.is_valid = False
+            # # Check if keys and values are valid types
+            # for k, v in warnings.items():
+            #     if type(k) != str:
+            #         self.errors.append(f'Parser warnings key {str(k)} is not a string')
+            #         self.is_valid = False
+            #     if type(v) != list:
+            #         self.errors.append(f'Parser warnings value {str(v)} in key {str(k)} is not a list')
+            #         self.is_valid = False
+            #     else:
+            #         # Check if entries within the list are all strings
+            #         for i in v:
+            #             if type(i) != str:
+            #                 self.errors.append(f'Parser warnings value {str(v)} in key {str(k)} contains entry {str(i)} that is not string')
+            #                 self.is_valid = False
 
     def __init__(self, parser_obj):
         self.errors = []
@@ -377,7 +382,7 @@ if __name__ == '__main__':
     test_obj = DummyParser(['../../uploads/large_dataset.csv'])
     #print('Test output df:\n\n', test_obj.df)
     #print('Has instrument_info:', hasattr(test_obj, 'instrument_info'))
-    ParsedDataValidator(test_obj)
+    ParserValidator(test_obj)
 
 
 

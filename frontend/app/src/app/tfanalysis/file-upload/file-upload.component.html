@@ -1,6 +1,6 @@
 <div class="row">
 
-      <div class="column" style="max-width: 350px">
+      <div class="column" style="max-width: 40%">
 
         <div class="dropzone" appFileUpload (fileDropped)="onFileDropped($event)">
           <input type="file" #fileDropRef id="fileDropRef" multiple (change)="fileBrowseHandler($event)" />
@@ -37,7 +37,7 @@
 
       </div>
 
-      <div class="column">
+      <div class="column" style="max-width: 60%">
         <form [formGroup]="fileUploadForm" (ngSubmit)="onSubmit()" class="form-column">
           <div style="display: inline-flex">
             <mat-form-field appearance="fill">

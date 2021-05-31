@@ -7,6 +7,8 @@ import { Validators } from '@angular/forms';
 import { MatDialog} from '@angular/material/dialog';
 import { UploadErrorDialogComponent } from './upload-error-dialog.component';
 import { EventEmitter } from '@angular/core';
+import Handsontable from 'handsontable';
+import validators = Handsontable.validators;
 
 @Component({
   selector: 'app-file-upload',
@@ -25,7 +27,7 @@ export class FileUploadComponent implements OnInit {
 
   fileUploadForm = new FormGroup({
     parser: new FormControl(''),
-    name: new FormControl('', Validators.required),
+    name: new FormControl('', [Validators.required]),
     user: new FormControl(''),
     notes: new FormControl(''),
     files: new FormControl(''),
@@ -59,7 +61,6 @@ export class FileUploadComponent implements OnInit {
     this.prepareFileList(event.target.files);
   }
   prepareFileList(files: any): void {
-
     for (const file of files) {
       this.files.push(file);
     }
@@ -100,10 +101,10 @@ export class FileUploadComponent implements OnInit {
     this.rawUploadInProgress$.emit(true);
     this.fileUploadService.uploadRawFiles(this.files, this.fileUploadForm)
           .subscribe(data => {
+            this.resetUploadForm();
             this.rawUploadInProgress$.emit(false);
             this.commonService.selectExperiment(data);
             this.rawUploadSuccess$.emit(true);
-            this.resetUploadForm();
           },
                     error => {
             this.rawUploadInProgress$.emit(false);
@@ -116,6 +117,8 @@ export class FileUploadComponent implements OnInit {
     for (const formName of ['name', 'user', 'notes', 'files', 'project']) {
       this.fileUploadForm.get(formName).setValue('');
     }
+    // None of the abstract control methods to clear the required validator on 'name' work
+    // If it's still annoying in the future, look again: https://stackoverflow.com/questions/43759590/angular-reactive-forms-how-to-reset-form-state-and-keep-values-after-submit
     this.files = [];
   }
 

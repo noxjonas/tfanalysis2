@@ -11,17 +11,21 @@ td, th {
   width: 25%;
 }
 
-.experiment-detail {
-  overflow: hidden;
-  display: flex;
-}
+/*.experiment-detail {*/
+/*  overflow: hidden;*/
+/*  display: flex;*/
+/*}*/
 
-tr.experiment-row:not(.example-expanded-row):hover {
+tr.experiment-row:hover {
   background: whitesmoke;
 }
 
-tr.experiment-row:not(.example-expanded-row):active {
-  background: #efefef;
+/*tr.experiment-row:active {*/
+/*  background: whitesmoke;*/
+/*}*/
+
+tr.experiment-row.selected:hover {
+  background: #8965f6;
 }
 
 .experiment-row td {
@@ -30,14 +34,45 @@ tr.experiment-row:not(.example-expanded-row):active {
 }
 
 .selected {
-  background-color: #7C4DFF;
+  background-color: #aa8eee;
 }
 
-.selected-detail {
-  background-color: #eae3ff;
+/*.selected-detail {*/
+/*  background-color: #eae3ff;*/
+/*}*/
+
+/*tr.experiment-detail-row {*/
+/*  height: 0;*/
+/*}*/
+
+/*.mat-list-item {*/
+/*  padding-left: 15px;*/
+/*  max-height: 25px; !* default is 72px *!*/
+/*  font-size: 14px;*/
+/*}*/
+
+/*.mat-list-base .mat-list-item .mat-list-item-content {*/
+/*  padding: 0px !important*/
+/*}*/
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
-tr.experiment-detail-row {
-  height: 0;
+.column {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+  flex: 1;
+  margin: 10px;
 }
 
+.form-column {
+  margin-top: 10px;
+  display: flex;
+  /*flex-wrap: nowrap;*/
+  flex-direction: column;
+}

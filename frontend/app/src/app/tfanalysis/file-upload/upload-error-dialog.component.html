@@ -1,4 +1,4 @@
-<div style="max-width: 500px">
+<div style="max-width: 700px">
   <h1 mat-dialog-title style="
     color: #F44336;
     display: flex;
@@ -11,7 +11,7 @@
       <span [innerHTML]="error"><br></span>
     </div>
   </div>
-  <div *ngIf="data.message.endsWith('Parser returned invalid data:')" mat-dialog-content style="font-size: 16px; color: #F44336"><br>Note that this error indicates that the selected parser is not working correctly and needs to be fixed!<br></div>
+  <div *ngIf="data.message.endsWith('Parser returned invalid data:')" mat-dialog-content style="font-size: 16px; color: #F44336"><br>Note that this error indicates that the selected parser is not working correctly and needs to be fixed! Or, you are using the wrong parser for your data!<br></div>
   <div mat-dialog-content style="font-size: 16px"><br>New experiment not added.</div>
   <div mat-dialog-actions>
     <button mat-button mat-dialog-close>Close</button>

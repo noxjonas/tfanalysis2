@@ -1,77 +1,167 @@
-<div>
-  <button mat-button (click)="showExperiments()">Submit</button>
-  <mat-form-field>
-    <mat-label>Filter</mat-label>
-    <input matInput (keyup)="applyFilter($event)" placeholder="Filter your experiments" #input>
-  </mat-form-field>
+<div class="row">
 
-  <div class="mat-elevation-z8">
-    <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
-
-
-      <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef> ID </th>
-        <td mat-cell *matCellDef="let row"> {{row.id}} </td>
-      </ng-container>
+  <div class="column" style="max-width: 55%">
+<!--    <button mat-button (click)="showExperiments()">Submit</button>-->
+    <mat-form-field>
+      <mat-label>Filter</mat-label>
+      <input matInput (keyup)="applyAnyFilter($event)" placeholder="Filter your experiments" #input>
+    </mat-form-field>
 
 
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef> Name </th>
-        <td mat-cell *matCellDef="let row"> {{row.name}} </td>
-      </ng-container>
+
+    <div class="mat-elevation-z8">
+      <table mat-table [dataSource]="dataSource" multiTemplateDataRows>
+
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef> ID </th>
+          <td mat-cell *matCellDef="let row"> {{row.id}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef> Name </th>
+          <td mat-cell *matCellDef="let row"> {{row.name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="project">
+          <th mat-header-cell *matHeaderCellDef> Project </th>
+          <td mat-cell *matCellDef="let row"> {{row.project}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="user">
+          <th mat-header-cell *matHeaderCellDef> User </th>
+          <td mat-cell *matCellDef="let row"> {{row.user}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="uploaded">
+          <th mat-header-cell *matHeaderCellDef> Uploaded </th>
+<!--      used to be:    {{row.uploaded | date:'yyyy-MM-dd HH:mm'}}-->
+          <td mat-cell *matCellDef="let row"> {{row.uploaded | date:'yyyy-MM-dd'}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>  </th>
+          <td mat-cell *matCellDef="let row">
+            <button (click)="selectExperiment(row)" mat-raised-button color="primary" style="max-width: 40px;"><i style="font-size: 25px;" class="material-icons">arrow_forward</i></button>
+          </td>
+        </ng-container>
 
 
-      <ng-container matColumnDef="uploaded">
-        <th mat-header-cell *matHeaderCellDef> Uploaded </th>
-        <td mat-cell *matCellDef="let row"> {{row.uploaded | date:'yyyy-MM-dd HH:mm'}} </td>
-      </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <!--      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>-->
 
 
-      <ng-container matColumnDef="user">
-        <th mat-header-cell *matHeaderCellDef> User </th>
-        <td mat-cell *matCellDef="let row"> {{row.user}} </td>
-      </ng-container>
+        <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
+<!--        <ng-container matColumnDef="expandedDetail">-->
+<!--          <td mat-cell *matCellDef="let experiment" [attr.colspan]="displayedColumns.length"-->
+<!--              [ngClass]="{'selected-detail' : experiment.id == selectedExperiment?.id}">-->
+<!--            <div class="experiment-detail"-->
+<!--                 [@detailExpand]="experiment.expanded ? 'expanded' : 'collapsed'"-->
+<!--                 >-->
+<!--              &lt;!&ndash; This is where a component could be loaded for an experiment?&ndash;&gt;-->
+<!--              <div>-->
+<!--                <h4>Notes:</h4>-->
+<!--                <p>{{experiment.notes}}</p>-->
+<!--                <h4>Errors:</h4>-->
+<!--                <p>{{experiment.errors}}</p>-->
+<!--                <button mat-button (click)="selectExperiment(experiment)">Submit</button>-->
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-<!--      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>-->
-
-
-      <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
-      <ng-container matColumnDef="expandedDetail">
-        <td mat-cell *matCellDef="let experiment" [attr.colspan]="displayedColumns.length"
-            [ngClass]="{'selected-detail' : experiment.id == selectedExperiment?.id}">
-          <div class="experiment-detail"
-               [@detailExpand]="experiment.expanded ? 'expanded' : 'collapsed'"
-               >
-            <!-- This is where a component could be loaded for an experiment?-->
-            <div>
-              <h4>Notes:</h4>
-              <p>{{experiment.notes}}</p>
-              <h4>Errors:</h4>
-              <p>{{experiment.errors}}</p>
-              <button mat-button (click)="selectExperiment(experiment)">Submit</button>
-
-            </div>
-          </div>
-        </td>
-      </ng-container>
-
-      <tr mat-row *matRowDef="let experiment; columns: displayedColumns;"
-          class="experiment-row"
-          [class.example-expanded-row]="experiment.expanded"
-          (click)="experiment.expanded = !experiment.expanded"
-          [ngClass]="{'selected' : experiment.id == selectedExperiment?.id}"
-          >
-      </tr>
-      <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="experiment-detail-row"></tr>
+<!--              </div>-->
+<!--            </div>-->
+<!--          </td>-->
+<!--        </ng-container>-->
 
 
-      <!-- Row shown when there is no matching data. -->
-      <tr class="mat-row" *matNoDataRow>
-        <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
-      </tr>
-    </table>
+<!--        [class.example-expanded-row]="experiment.expanded"-->
+<!--        (click)="experiment.expanded = !experiment.expanded"-->
+        <tr mat-row *matRowDef="let experiment; columns: displayedColumns;"
+            class="experiment-row"
 
-    <mat-paginator [pageSizeOptions]="[10, 25, 100]"></mat-paginator>
+            [ngClass]="{'selected' : experiment.id == selectedExperiment?.id}"
+            >
+        </tr>
+<!--        <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="experiment-detail-row"></tr>-->
+
+
+        <!-- Row shown when there is no matching data. -->
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
+        </tr>
+      </table>
+
+      <mat-paginator [pageSizeOptions]="[10, 25, 100]"></mat-paginator>
+    </div>
   </div>
+
+  <div class="column" style="max-width: 45%">
+    <mat-card *ngIf="!selectedExperiment">
+      <h3>No experiment selected</h3>
+    </mat-card>
+
+    <mat-card *ngIf="selectedExperiment">
+      <h2><b> {{selectedExperiment.name}} </b>({{selectedExperiment.uploaded | date:'yyyy-MM-dd'}})</h2>
+
+      <!--   Instrument info   -->
+      <div *ngIf="instrumentInfo">
+        <span style="font-size: 16px">Instrument info:</span>
+        <!--        <mat-list *ngFor="let item of instrumentInfo.slice().reverse() | keyvalue" role="list">-->
+        <ul *ngFor="let item of instrumentInfo">
+          <li>{{item}}</li>
+        </ul>
+      </div>
+
+      <!--   Parse warnings   -->
+      <div *ngIf="parseWarnings">
+        <span style="font-size: 16px">Warnings:</span>
+        <!--        <mat-list *ngFor="let item of instrumentInfo.slice().reverse() | keyvalue" role="list">-->
+        <ul *ngFor="let item of parseWarnings">
+          <li>{{item}}</li>
+        </ul>
+      </div>
+
+<!--      &lt;!&ndash;   Instrument info   &ndash;&gt;-->
+<!--      <div *ngIf="instrumentInfo">-->
+<!--        <span style="font-size: 16px">Instrument info:</span>-->
+<!--        &lt;!&ndash;        <mat-list *ngFor="let item of instrumentInfo.slice().reverse() | keyvalue" role="list">&ndash;&gt;-->
+<!--        <mat-list *ngFor="let item of instrumentInfo" role="list">-->
+<!--          <mat-list-item role="listitem">{{item}}</mat-list-item>-->
+<!--        </mat-list>-->
+<!--      </div>-->
+
+      <!--      &lt;!&ndash;   Parser warnings   &ndash;&gt;-->
+      <!--      <div *ngIf="parseWarnings">-->
+      <!--        <div mat-subheader>Warnings</div>-->
+      <!--        <mat-list *ngFor="let item of parseWarnings.slice().reverse() | keyvalue" role="list">-->
+      <!--          <mat-list-item mat-subheader style="margin-left: 15px">{{item.key}}</mat-list-item>-->
+      <!--          <div *ngFor="let entry of item.value">-->
+      <!--            <mat-list-item role="listitem" style="margin-left: 15px">{{entry}}</mat-list-item>-->
+      <!--          </div>-->
+      <!--        </mat-list>-->
+      <!--      </div>-->
+
+      <form [formGroup]="experimentUpdateForm" (ngSubmit)="updateExperimentInfo()" class="form-column">
+
+        <mat-form-field style="max-width: 300px; margin-top: 10px">
+          <mat-label>Name</mat-label>
+          <input matInput type="text" formControlName="name">
+        </mat-form-field>
+
+        <mat-form-field style="max-width: 300px; margin-top: 10px">
+          <mat-label>Project</mat-label>
+          <input matInput type="text" formControlName="project">
+        </mat-form-field>
+
+        <mat-form-field style="max-width: 600px; margin-top: 10px">
+          <mat-label>Notes</mat-label>
+          <textarea matInput type="text" formControlName="notes"></textarea>
+        </mat-form-field>
+        <button mat-raised-button type="submit" color="primary" style="max-width: 100px">Update</button>
+        <!-- TODO: at this point experiment must already been selected? so adding button to 'process' is irrelevant  </button>-->
+      </form>
+
+
+
+    </mat-card>
+  </div>
+
 </div>

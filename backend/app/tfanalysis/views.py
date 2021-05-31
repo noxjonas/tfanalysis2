@@ -65,6 +65,7 @@ class UploadData(APIView):
             project=request.POST.get('project'),
             user=request.POST.get('user'),
             notes=request.POST.get('notes'),
+            instrument_info=json.dumps(data.instrument_info) if hasattr(data, 'instrument_info') else json.dumps({}),
             parse_warnings=json.dumps(data.warnings) if hasattr(data, 'warnings') else json.dumps({}),
         )
         experiment.save()
