@@ -6,6 +6,7 @@ import {environment} from '../../environments/environment';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {SampleInfo} from './sample-info/sample-info.component';
 import {sample} from 'rxjs/operators';
+import {FormGroup} from '@angular/forms';
 
 
 export interface Parsers {
@@ -73,6 +74,7 @@ export class TransitionData {
 export class CommonService {
   public parsersReceived$: EventEmitter<boolean>;
   public experimentSelected$: EventEmitter<Experiment>;
+  public experiments: Experiment[];
   public selected!: Experiment;
   public transitionsProcessingStarted$: EventEmitter<boolean>;
   public transitionsProcessed$: EventEmitter<boolean>;
@@ -89,16 +91,6 @@ export class CommonService {
     this.sampleInfoChanged$ = new EventEmitter();
   }
 
-  public selectExperiment(experiment: Experiment): Experiment {
-    this.selected = experiment;
-    this.experimentSelected$.emit(experiment);
-    return this.selected;
-  }
-
-  public getSelectedExperiment(): Experiment {
-    return this.selected;
-  }
-
   private _fetchParsers(): Observable<any> {
     return this.http.get<Parsers[]>(environment.baseApiUrl + 'tfanalysis/fetchparsers/');
   }
@@ -111,6 +103,38 @@ export class CommonService {
         return;
       }
     );
+  }
+
+  fetchExperiments(): Observable<Experiment[]> {
+    return this.http.post<Experiment[]>(environment.baseApiUrl + 'tfanalysis/fetchexperiments/', null);
+  }
+
+  public selectExperiment(experiment: any) {
+    this.selected = experiment;
+    this.experimentSelected$.emit(experiment);
+    return this.selected;
+  }
+
+  public getSelectedExperiment(): Experiment {
+    return this.selected;
+  }
+
+  updateExperimentInfo(formGroupRaw: string): Observable<any> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    };
+    return this.http.put<any>(environment.baseApiUrl + 'tfanalysis/updateexperimentinfo/', JSON.stringify(formGroupRaw), httpOptions);
+  }
+
+  deleteExperiment(experimentId: number): Observable<any> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    };
+    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/deleteexperiment/', JSON.stringify({id: experimentId}), httpOptions);
   }
 
   // Need to fix implementation on this, as it should just take data if settings weren't changed?

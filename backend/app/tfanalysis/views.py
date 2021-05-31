@@ -137,7 +137,7 @@ class UploadData(APIView):
 
         serializer = ExperimentsSerializer(experiment)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=201)
 
 
 class FetchExperiments(APIView):
@@ -146,7 +146,38 @@ class FetchExperiments(APIView):
         experiments = Experiments.objects.all()
         serialised = ExperimentsSerializer(experiments, many=True)
 
-        return JsonResponse(serialised.data, safe=False, status=status.HTTP_200_OK)
+        return JsonResponse(serialised.data, safe=False, status=200)
+
+
+class UpdateExperimentInfo(APIView):
+
+    def put(self, request):
+        serializer = ExperimentsSerializer(data=request.data, ignore_fields=['parser'])
+
+        if not serializer.is_valid():
+            return Response({'update_status': 'fail'}, status=400)
+
+        Experiments.objects.filter(pk=serializer.data['id']).update(
+            name=serializer.data['name'],
+            project=serializer.data['project'],
+            user=serializer.data['user'],
+            notes=serializer.data['notes'],
+        )
+
+        return Response({'update_status': 'success'}, status=200)
+
+
+class DeleteExperiment(APIView):
+
+    def post(self, request):
+        # try:
+        #     id = int(request.data['id'])
+        # except:
+        #     return Response({'update_status': 'fail'}, status=400)
+
+        Experiments.objects.get(pk=request.data['id']).delete()
+
+        return Response({'update_status': 'success'}, status=200)
 
 
 class FetchSampleInfo(APIView):

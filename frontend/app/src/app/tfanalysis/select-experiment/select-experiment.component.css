@@ -76,3 +76,7 @@ tr.experiment-row.selected:hover {
   /*flex-wrap: nowrap;*/
   flex-direction: column;
 }
+
+.in-table-filters {
+  max-width: 50px;
+}

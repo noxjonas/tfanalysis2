@@ -81,9 +81,9 @@ export class ProcessingSettingsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.commonService.selected) {
-      this.importProcessingSettings()
-    }
+    // if (this.commonService.selected) {
+    //   this.importProcessingSettings()
+    // }
   }
 
   importProcessingSettings() {

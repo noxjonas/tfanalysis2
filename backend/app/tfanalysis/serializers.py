@@ -31,7 +31,7 @@ class ParsersSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ExperimentsSerializer(serializers.ModelSerializer):
+class ExperimentsSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = Experiments
         fields = '__all__'

@@ -12,7 +12,7 @@ export class SelectExperimentService {
 
   constructor(private http: HttpClient) { }
 
-  fetchExperiments(): Observable<any> {
-    return this.http.post<Experiment[]>(environment.baseApiUrl+'tfanalysis/fetchexperiments/', null)
-  }
+  // fetchExperiments(): Observable<any> {
+  //   return this.http.post<Experiment[]>(environment.baseApiUrl+'tfanalysis/fetchexperiments/', null)
+  // }
 }
