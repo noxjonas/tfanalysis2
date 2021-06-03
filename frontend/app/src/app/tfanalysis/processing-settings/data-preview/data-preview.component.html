@@ -1,0 +1,31 @@
+<div>
+  <div *ngIf="previewData">
+
+
+    <plotly-plot *ngIf="rawGraph.data[0].meta != 'loading'"
+                 [data]="rawGraph.data"
+                 [layout]="rawGraph.layout"
+                 [updateOnlyWithRevision]="true"
+                 [revision]="revision"
+                 [config]="commonConfig"
+    ></plotly-plot>
+
+    <plotly-plot *ngIf="normalGraph.data[0].meta != 'loading'"
+                 [data]="normalGraph.data"
+                 [layout]="normalGraph.layout"
+                 [updateOnlyWithRevision]="true"
+                 [revision]="revision"
+                 [config]="commonConfig"
+    ></plotly-plot>
+
+    <plotly-plot *ngIf="firstDerGraph.data[0].meta != 'loading'"
+                 [data]="firstDerGraph.data"
+                 [layout]="firstDerGraph.layout"
+                 [updateOnlyWithRevision]="true"
+                 [revision]="revision"
+                 [config]="commonConfig"
+    ></plotly-plot>
+  </div>
+
+
+</div>

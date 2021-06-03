@@ -34,6 +34,8 @@ import { PlotlyModule } from 'angular-plotly.js';
 import { FileUploadDirective } from './tfanalysis/file-upload/file-upload.directive';
 import { UploadErrorDialogComponent } from './tfanalysis/file-upload/upload-error-dialog.component';
 import { DeleteConfirmDialogComponent } from './tfanalysis/select-experiment/delete-confirm-dialog.component';
+import { DataPreviewComponent } from './tfanalysis/processing-settings/data-preview/data-preview.component';
+import { SampleSelectorComponent } from './tfanalysis/processing-settings/sample-selector/sample-selector.component';
 
 PlotlyModule.plotlyjs = PlotlyJS;
 
@@ -51,6 +53,8 @@ PlotlyModule.plotlyjs = PlotlyJS;
     FileUploadDirective,
     UploadErrorDialogComponent,
     DeleteConfirmDialogComponent,
+    DataPreviewComponent,
+    SampleSelectorComponent,
   ],
   imports: [
     BrowserModule,

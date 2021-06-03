@@ -1,7 +1,57 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
+from django.forms.models import model_to_dict
+
+
+class ModelDiffMixin(object):
+    """
+    A model mixin that tracks model fields' values and provide some useful api
+    to know what fields have been changed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(ModelDiffMixin, self).__init__(*args, **kwargs)
+        self.__initial = self._dict
+
+    @property
+    def diff(self):
+        d1 = self.__initial
+        d2 = self._dict
+        diffs = [(k, (v, d2[k])) for k, v in d1.items() if v != d2[k]]
+        return dict(diffs)
+
+    @property
+    def has_changed(self):
+        return bool(self.diff)
+
+    @property
+    def changed_fields(self):
+        return self.diff.keys()
+
+    def get_field_diff(self, field_name):
+        """
+        Returns a diff for field if it's changed and None otherwise.
+        """
+        return self.diff.get(field_name, None)
+
+    def save(self, *args, **kwargs):
+        """
+        Saves model and set initial state.
+        """
+        super(ModelDiffMixin, self).save(*args, **kwargs)
+        self.__initial = self._dict
+
+    @property
+    def _dict(self):
+        return model_to_dict(self, fields=[field.name for field in
+                                           self._meta.fields])
+
+
 # TODO: add imported screens model
+
+# TODO: all subsequent processing models should relate to previous data with on_delete.CASCADE
+
 '''
 ‘nearest’, ‘zero’, ‘linear’, ‘quadratic’, ‘cubic’, ‘spline’, ‘barycentric’, ‘polynomial’: Passed to scipy.interpolate.interp1d. These methods use the numerical values of the index. Both ‘polynomial’ and ‘spline’ require that you also specify an order (int), e.g. df.interpolate(method='polynomial', order=5).
 
@@ -120,6 +170,7 @@ class DefaultTransitionProcessingSettings(models.Model):
     filtfilt_wn = models.FloatField(default=0.025, blank=True)
 
     data_to_derive = models.CharField(max_length=100, default='normal') # 'normal', 'raw'
+    derivative_period = models.IntegerField() # default 1
 
     x_unit = models.TextField(default='°C', blank=True)
     y_unit = models.TextField(default='AU', blank=True)
@@ -130,11 +181,12 @@ class DefaultTransitionProcessingSettings(models.Model):
         db_table = 'default_transition_processing_settings'
 
 
-class TransitionProcessingSettings(models.Model):
+class TransitionProcessingSettings(models.Model, ModelDiffMixin):
     experiment = models.ForeignKey(Experiments, on_delete=models.CASCADE)  # I will also get sample info from this
     default_settings = models.ForeignKey(DefaultTransitionProcessingSettings, on_delete=models.CASCADE)
     updated = models.DateTimeField(auto_now=True)
 
+    data_types_available = ArrayField(models.TextField())
     selected_data_type = models.TextField()
 
     truncate_x_min = models.FloatField()
@@ -151,6 +203,8 @@ class TransitionProcessingSettings(models.Model):
     filtfilt_wn = models.FloatField(blank=True)
 
     data_to_derive = models.CharField(max_length=100) # 'normal', 'raw'
+    # TODO: could change this to float field and take in x axis instead of period: easier to understand
+    derivative_period = models.IntegerField() # default 1
 
     x_unit = models.TextField(blank=True)
     y_unit = models.TextField(blank=True)
@@ -168,13 +222,14 @@ class ProcessedTransitionData(models.Model):
 
     pos = models.CharField(max_length=16)
     # all information required to make visuals should be made available here
-    scatter_raw_x = ArrayField(models.FloatField())
-    scatter_raw_y = ArrayField(models.FloatField())
-    scatter_regular_x = ArrayField(models.FloatField())
-    scatter_regular_y = ArrayField(models.FloatField())
-    scatter_normal_y = ArrayField(models.FloatField())
-    scatter_smooth_y = ArrayField(models.FloatField())
-    scatter_first_der_y = ArrayField(models.FloatField())
+    # raw is repeated here because it can be truncated; could also just truncate when called? easier to serialise tho
+    raw_x = ArrayField(models.FloatField())
+    raw_y = ArrayField(models.FloatField())
+    regular_x = ArrayField(models.FloatField())
+    regular_y = ArrayField(models.FloatField())
+    normal_y = ArrayField(models.FloatField())
+    smooth_y = ArrayField(models.FloatField())
+    first_der_y = ArrayField(models.FloatField())
 
     class Meta:
         db_table = 'processed_transition_data'

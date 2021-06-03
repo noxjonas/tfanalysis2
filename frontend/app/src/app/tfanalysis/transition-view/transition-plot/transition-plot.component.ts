@@ -143,19 +143,19 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   seriesColours: SeriesColours[] = [];
 
   public graph = {
-  data: [{
-    x: [1, 2],
-    y: [1, 2],
-    type: 'scatter',
-    mode: 'lines',
-    visible: false,
-    marker: {
-      color: 'red'
-    },
-    meta: 'loading'
-  }],
-  layout: {width: 800, height: 500, title: 'Transition plots'}
-};
+    data: [{
+      x: [1, 2],
+      y: [1, 2],
+      type: 'scatter',
+      mode: 'lines',
+      visible: false,
+      marker: {
+        color: 'red'
+      },
+      meta: 'loading'
+    }],
+    layout: {width: 800, height: 500, title: 'Transition plots'}
+  };
 
   constructor(@Inject(PLATFORM_ID) private platformId: any, private zone: NgZone,
               private commonService: CommonService,
@@ -205,13 +205,15 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  // TODO: add selection whether to show raw data
+
   makeChart(): void {
     console.log('this is the data I deal with', this.transitionData);
     const newData: any[] = [];
     this.transitionData.forEach(sample => {
       newData.push({
-        x: sample.scatter_regular_x,
-        y: sample.scatter_regular_y,
+        x: sample.regular_x,
+        y: sample.regular_y,
         name: sample.pos,
         type: 'scatter',
         mode: 'lines',
@@ -251,15 +253,12 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   changeChartData(dataType: string): void {
     this.graph.data.forEach((data, index) => {
       // tslint:disable-next-line:no-string-literal
-      data.y = this.transitionData[index]['scatter_' + dataType + '_y'];
+      data.y = this.transitionData[index][dataType + '_y'];
     });
     this.revision += 1;
   }
 
   filterChartLegend(displayedSamples: string[]): void {
-    console.log('display:', displayedSamples);
-    console.log('layout', this.graph);
-
     const visibility = (pos: string, displayed: string[]) => {
       return displayed.includes(pos);
     };
@@ -284,7 +283,7 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
 
     // Check if grouping is used; i.e. there must be more than 1 group
     const groups = [...new Set(displayedSamples.map(x => x.group))].sort();
-    console.log('groups', groups);
+    // console.log('groups', groups);
     if (groups.length < 2) {
       // just make simple array of colours
       const simpleColourArr = [];
@@ -311,9 +310,9 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
         }
       });
 
-      console.log('colourMap', this.seriesColours);
     } else {
-      console.log('There are groups');
+      // TODO: implement colouring by group
+      console.log('There are groups', groups);
     }
 
     this.graph.data.forEach((data, index) => {

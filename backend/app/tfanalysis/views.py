@@ -2,10 +2,10 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from .models import Experiment, RawData, SampleInfo, DefaultProcessingSettings, ProcessingSettings, ProcessedDsfData
-from .serializers import RawDataSerializer, ExperimentSerializer, SampleInfoSerializer, ProcessingSettingsSerializer, ProcessedDsfDataSerializer
+from .serializers import ExperimentSerializer, SampleInfoSerializer, ProcessingSettingsSerializer, ProcessedDsfDataSerializer
 
-from .models import Parsers, Experiments, InstrumentInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, DefaultPeakProcessingSettings, PeakProcessingSettings
-from .serializers import ParsersSerializer, ExperimentsSerializer
+from .models import Parsers, Experiments, InstrumentInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, DefaultPeakProcessingSettings, PeakProcessingSettings, ProcessedTransitionData
+from .serializers import ParsersSerializer, ExperimentsSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer
 
 
 from django.core.files.storage import default_storage
@@ -20,10 +20,16 @@ from django.db import connections
 import io
 import datetime
 from django.utils import timezone
-from .processors import DsfProcessor
+from .processors import TransitionProcessor
 import pandas as pd
 import json
 import os
+
+# TODO: auto_now fields are not honoured with .update method; need to save manually
+# TODO: to be fair, only the experiment needs auto_now field, which could be saved everytime a change is made
+# TODO I'm only interested in when the experiment was actually fiddled with last
+# for item in my_queryset:
+#     item.save()
 
 
 class FetchParsers(APIView):
@@ -122,6 +128,7 @@ class UploadData(APIView):
         new_transition_settings = TransitionProcessingSettings(
             experiment=experiment,
             default_settings=default_transition_settings,
+            data_types_available=data.df['data_type'].unique().tolist(),
             **default_transition_settings_dict
         )
         new_transition_settings.save()
@@ -170,13 +177,7 @@ class UpdateExperimentInfo(APIView):
 class DeleteExperiment(APIView):
 
     def post(self, request):
-        # try:
-        #     id = int(request.data['id'])
-        # except:
-        #     return Response({'update_status': 'fail'}, status=400)
-
         Experiments.objects.get(pk=request.data['id']).delete()
-
         return Response({'update_status': 'success'}, status=200)
 
 
@@ -187,7 +188,7 @@ class FetchSampleInfo(APIView):
         sample_info = SampleInfo.objects.filter(experiment_id=experiment_id).all()
         serialised = SampleInfoSerializer(sample_info, many=True)
 
-        return JsonResponse(serialised.data, safe=False, status=status.HTTP_200_OK)
+        return JsonResponse(serialised.data, safe=False, status=200)
 
 
 class UpdateSampleInfo(APIView):
@@ -196,7 +197,7 @@ class UpdateSampleInfo(APIView):
         serializer = SampleInfoSerializer(data=request.data, many=True, ignore_fields=('experiment', 'raw_data'))
 
         if not serializer.is_valid():
-            return Response({'update_status': 'fail'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'update_status': 'fail'}, status=400)
 
         for i in serializer.data:
             SampleInfo.objects.filter(pk=i['id']).update(
@@ -213,37 +214,173 @@ class UpdateSampleInfo(APIView):
                 is_blank=False if i['is_blank'] is None else i['is_blank'],
             )
 
-        return Response({'update_status': 'success'}, status=status.HTTP_200_OK)
+        return Response({'update_status': 'success'}, status=200)
 
 
-class FetchProcessingSettings(APIView):
+class FetchTransitionProcessingSettings(APIView):
 
     def post(self, request):
-        experiment_id = int(request.POST.get('experiment_id'))
-        processing_settings = ProcessingSettings.objects.get(experiment_id=experiment_id)
-        serialised = ProcessingSettingsSerializer(processing_settings)
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        settings = TransitionProcessingSettings.objects.get(experiment=experiment)
+        serialised = TransitionProcessingSettingsSerializer(settings)
 
-        return JsonResponse(serialised.data, safe=False, status=status.HTTP_200_OK)
+        return JsonResponse(serialised.data, safe=False, status=200)
 
 
-class UpdateProcessingSettings(APIView):
+class UpdateTransitionProcessingSettings(APIView):
 
     def put(self, request):
-        serializer = ProcessingSettingsSerializer(data=request.data, ignore_fields=['experiment'])
+        serializer = TransitionProcessingSettingsSerializer(data=request.data, ignore_fields=('id', 'experiment', 'default_settings'))
+        experiment = Experiments.objects.get(pk=request.data['id'])
 
         if not serializer.is_valid():
-            print(repr(serializer), '\n\n', serializer.errors)
-            return Response({'update_status': 'fail'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'update_status': 'fail'}, status=400)
 
-        ProcessingSettings.objects.filter(pk=serializer.data['id']).update(
-            **serializer.data
+        settings = TransitionProcessingSettings.objects.get(experiment=experiment)
+
+        for key, value in serializer.data.items():
+            setattr(settings, key, value)
+        settings.save()
+
+        # Delete processed data if settings changed
+        if settings.has_changed:
+            processed_data = ProcessedTransitionData.objects.filter(experiment=experiment).all()
+            processed_data.delete()
+
+        return JsonResponse(serializer.data, status=200)
+
+
+class ResetTransitionProcessingSettings(APIView):
+
+    def post(self, request):
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        default_transition_settings = DefaultTransitionProcessingSettings.objects.get(parser=experiment.parser)
+        default_transition_settings_dict = {k: v for k, v in default_transition_settings.__dict__.items() if k not in ['_state', 'id', 'parser_id', 'default_settings', 'data_types_available']}
+
+        settings = TransitionProcessingSettings.objects.get(experiment=experiment)
+
+        for key, value in default_transition_settings_dict.items():
+            setattr(settings, key, value)
+        settings.save()
+
+        if settings.has_changed:
+            processed_data = ProcessedTransitionData.objects.filter(experiment=experiment).all()
+            processed_data.delete()
+
+        return Response({'update_status': 'success'}, status=200)
+
+
+class PreviewTransitionProcessing(APIView):
+
+    def post(self, request):
+        # Process the data
+        processor = TransitionProcessor(request.data['id'], pos_filter=request.data['filter'])
+        df = processor.result_df
+
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        processing_settings = TransitionProcessingSettings.objects.get(experiment=experiment)
+        raw_data = RawData.objects.filter(
+            experiment=experiment,
+            data_type=processing_settings.selected_data_type,
+            pos__in=request.data['filter']
         )
 
-        return Response({'update_status': 'success'}, status=status.HTTP_200_OK)
+        # This might not be needed since ordering is conserved
+        # However, in light of being explicit over implicit - objects are explicitly mapped to pos
+        raw_data_obj_dict = {}
+        for i in raw_data:
+            raw_data_obj_dict[i.pos] = i
+
+        # Create objects
+        obj_list = []
+        for index, row in df.iterrows():
+            obj = ProcessedTransitionData(
+                experiment=experiment,
+                processing_settings=processing_settings,
+                raw_data=raw_data_obj_dict[row['pos']],
+                pos=row['pos'],
+                raw_x=row['raw_x'],
+                raw_y=row['raw_y'],
+                regular_x=row['regular_x'],
+                regular_y=row['regular_y'],
+                normal_y=row['normal_y'],
+                smooth_y=row['smooth_y'],
+                first_der_y=row['first_der_y'],
+            )
+            obj_list.append(obj.__dict__)
+
+        serializer = ProcessedTransitionDataSerializer(data=obj_list, many=True, ignore_fields=['id', 'experiment', 'processing_settings', 'raw_data'])
+
+        if serializer.is_valid():
+            return JsonResponse(serializer.data, safe=False, status=200)
+
+        return Response({'processing_status': 'fail'}, status=500)
+
+
+class ProcessTransitionData(APIView):
+
+    def post(self, request):
+
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        processing_settings = TransitionProcessingSettings.objects.get(experiment=experiment)
+        raw_data = RawData.objects.filter(
+            experiment=experiment,
+            data_type=processing_settings.selected_data_type
+        )
+
+        # If data exists, means that the settings were not changed and therefore data is still valid
+        processed_data = ProcessedTransitionData.objects.filter(experiment=experiment).all()
+        if len(processed_data) > 0:
+            serializer = ProcessedTransitionDataSerializer(processed_data, many=True, ignore_fields=['id', 'experiment', 'processing_settings', 'raw_data'])
+            return JsonResponse(serializer.data, safe=False, status=200)
+
+        # Process the data otherwise
+        processor = TransitionProcessor(request.data['id'])
+        df = processor.result_df
+
+        # This might not be needed since ordering is conserved
+        # However, in light of being explicit over implicit - objects are explicitly mapped to pos
+        raw_data_obj_dict = {}
+        for i in raw_data:
+            raw_data_obj_dict[i.pos] = i
+
+        obj_list = []
+        for index, row in df.iterrows():
+            obj, created = ProcessedTransitionData.objects.update_or_create(
+                # These ensure uniqueness
+                experiment=experiment,
+                processing_settings=processing_settings,
+                raw_data=raw_data_obj_dict[row['pos']],
+                pos=row['pos'],
+
+                # These are the values added, or changed if objects already exist
+                defaults={
+                    'raw_x': row['raw_x'],
+                    'raw_y': row['raw_y'],
+                    'regular_x': row['regular_x'],
+                    'regular_y': row['regular_y'],
+                    'normal_y': row['normal_y'],
+                    'smooth_y': row['smooth_y'],
+                    'first_der_y': row['first_der_y'],
+                },
+            )
+            obj_list.append(obj.__dict__)
+
+        # Serialise the data and send to front end
+        serializer = ProcessedTransitionDataSerializer(data=obj_list, many=True, ignore_fields=['id', 'experiment', 'processing_settings', 'raw_data'])
+
+        if serializer.is_valid():
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return JsonResponse({'processing_status': 'fail'}, status=500)
 
 
 
-class ProcessData(APIView):
+
+
+
+
+
+class _ProcessData(APIView):
 
     def post(self, request):
         experiment_id = int(request.POST.get('experiment_id'))
@@ -302,4 +439,17 @@ class ProcessData(APIView):
         return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
 
-#TODO: write a view to reset processing settings to default
+# class UpdateProcessingSettings(APIView):
+#
+#     def put(self, request):
+#         serializer = ProcessingSettingsSerializer(data=request.data, ignore_fields=['experiment'])
+#
+#         if not serializer.is_valid():
+#             print(repr(serializer), '\n\n', serializer.errors)
+#             return Response({'update_status': 'fail'}, status=status.HTTP_400_BAD_REQUEST)
+#
+#         ProcessingSettings.objects.filter(pk=serializer.data['id']).update(
+#             **serializer.data
+#         )
+#
+#         return Response({'update_status': 'success'}, status=status.HTTP_200_OK)

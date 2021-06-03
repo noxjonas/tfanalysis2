@@ -1,0 +1,34 @@
+<div style="display: inline-flex; font-size: 12px">
+
+  <mat-form-field [style.width.px]=400>
+    <mat-chip-list #chipList aria-label="Position selection">
+      <mat-chip
+        *ngFor="let position of positions"
+        [selectable]="selectable"
+        [removable]="removable"
+        (removed)="remove(position)">
+        {{position}}
+        <mat-icon matChipRemove *ngIf="removable">cancel</mat-icon>
+      </mat-chip>
+      <input
+        placeholder="Enter up to three sample positions"
+        #positionInput
+        [formControl]="positionCtrl"
+        [matAutocomplete]="auto"
+        [matChipInputFor]="chipList"
+        [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+        [matChipInputAddOnBlur]="addOnBlur"
+        (matChipInputTokenEnd)="add($event)">
+    </mat-chip-list>
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="selected($event)">
+      <ng-container *ngFor="let position of filteredPositions | async">
+        <mat-option *ngIf="!positions.includes(position)" [value]="position">
+          {{position}}
+        </mat-option>
+      </ng-container>
+    </mat-autocomplete>
+  </mat-form-field>
+
+  <button mat-raised-button color="accent" (click)="randomThree()"  style="max-height: 40px; margin-left: 20px">Random three</button>
+
+</div>

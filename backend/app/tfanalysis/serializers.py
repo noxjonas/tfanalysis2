@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import RawData, Experiment, SampleInfo, ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
-from .models import Parsers, Experiments
+from .models import Experiment, SampleInfo, ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
+from .models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
@@ -37,6 +37,27 @@ class ExperimentsSerializer(DynamicFieldsModelSerializer):
         fields = '__all__'
 
 
+class TransitionProcessingSettingsSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = TransitionProcessingSettings
+        fields = '__all__'
+
+
+class ProcessedTransitionDataSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = ProcessedTransitionData
+        fields = '__all__'
+
+
+#TODO do not write serializer for raw+processed data
+
+
+
+
+
+
+
+
 
 
 #TODO: Move or remove stuff below
@@ -52,11 +73,6 @@ class ExperimentSerializer(serializers.ModelSerializer):
         model = Experiment
         fields = '__all__'
 
-
-class RawDataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RawData
-        fields = '__all__'
 
 
 class SampleInfoSerializer(DynamicFieldsModelSerializer):

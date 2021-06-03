@@ -64,6 +64,7 @@ class DummyParser:
         'filtfilt_wn': 0.025,  # See scipy.signal.butter Wn
 
         'data_to_derive': 'normal',  # 'normal' or 'raw'
+        'derivative_period': 1,
 
         'x_unit': '°C',
         'y_unit': 'AU',

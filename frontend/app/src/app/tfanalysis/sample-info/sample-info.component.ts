@@ -46,6 +46,7 @@ export class SampleInfoComponent implements OnInit {
     colHeaders: true,
     stretchH: 'all',
     height: 24,
+    // width: 800,
   };
   private hotRegisterer = new HotTableRegisterer();
   id = 'sample-info';

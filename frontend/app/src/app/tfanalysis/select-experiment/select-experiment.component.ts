@@ -4,7 +4,7 @@ import {MatTableDataSource} from '@angular/material/table';
 import {SelectExperimentService} from './select-experiment.service';
 import {animate, state, style, transition, trigger} from '@angular/animations';
 import {CommonService} from '../common.service';
-import {ProcessingSettings, ProcessingSettingsComponent} from '../processing-settings/processing-settings.component';
+import {TransitionProcessingSettings, ProcessingSettingsComponent} from '../processing-settings/processing-settings.component';
 import { Experiment } from '../common.service';
 import {FormControl, FormGroup, Validators} from '@angular/forms';
 import {UploadErrorDialogComponent} from '../file-upload/upload-error-dialog.component';

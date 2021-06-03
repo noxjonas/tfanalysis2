@@ -10,8 +10,10 @@ from .parsers import *
 class TfanalysisConfig(AppConfig):
     name = 'tfanalysis'
 
-    def ready(self):
+
+    def create_parsers(self):
         # Register the parser classes. These calls are idempotent so it does not matter how many times this runs.
+
         Parsers = self.get_model('Parsers')
         DefaultTransitionProcessingSettings = self.get_model('DefaultTransitionProcessingSettings')
         DefaultPeakProcessingSettings = self.get_model('DefaultPeakProcessingSettings')
@@ -31,3 +33,9 @@ class TfanalysisConfig(AppConfig):
                     parser=parser_obj,
                     defaults=obj.default_peak_processing_settings
                 )
+
+    def ready(self):
+        try:
+            self.create_parsers()
+        except:
+            print('\nTables not created yet. Skipping creating parsers...\n')

@@ -1,55 +1,37 @@
 import { Component, OnInit } from '@angular/core';
-import {ProcessingSettingsService} from "./processing-settings.service";
-import {CommonService} from "../common.service";
-import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
-import {SampleInfoService} from "../sample-info/sample-info.service";
+import { CommonService, TransitionData } from '../common.service';
+import { FormGroup, FormControl } from '@angular/forms';
+import { SampleInfo } from '../sample-info/sample-info.component';
 
 
-export interface ProcessingSettings {
+export interface TransitionProcessingSettings {
   id: number;
-  experiment_id: number;
-  changed: string;
-  selected_data_type: string;
+  experiment: number;
+  default_settings: number;
+  updated: string;
 
-  flat_blank: string; // position? or just 0.0 TODO: implement in settings
-  blank_average: number;
-  skip_outliers: boolean;
+  data_types_available: string[];
+  selected_data_type: string;
 
   truncate_x_min: number;
   truncate_x_max: number;
 
   interpolation_indices: number;
-  interpolation_method: string; //default is 'linear'
-  interpolation_order: number; //int
+  interpolation_method: string;
+  interpolation_order: number;
 
-  peak_mode: string; // 'positive', 'negative', 'both'
-  peak_derivative_of: string; // 'normalised', 'raw'
-  peak_number_limit: number; //int
+  filter_type: string;
+  savgol_smoothing_coefficient: number;
+  filtfilt_n: number;
+  filtfilt_wn: number;
 
-  peak_temp_limit_min: number; // see models TO DO in django
-  peak_temp_limit_max: number; // see models TO DO in django
-  peak_prominence_min: number;
-  peak_prominence_max: number;
-  peak_distance: number; // will need to convert this to int based on interpolation_indices
-  peak_height_min: number;
-  peak_height_max: number;
-  peak_width_min: number; // not actually used
-  peak_width_max: number; // not actually used
-  peak_threshold_min: number; // not actually used
-  peak_threshold_max: number; // not actually used
+  data_to_derive: string;
+  derivative_period: number;
 
-  smoothing_coefficient: number; // percent
-
-  difference_significance: number;
-
-  x_unit: string; // '°C'
-  y_unit: string; // 'AU'
-  x_label: string; // 't'
-  y_label: string; // ''
-}
-
-interface GenericOptions {
-  value: string;
+  x_unit: string;
+  y_unit: string;
+  x_label: string;
+  y_label: string;
 }
 
 @Component({
@@ -58,45 +40,45 @@ interface GenericOptions {
   styleUrls: ['./processing-settings.component.css']
 })
 export class ProcessingSettingsComponent implements OnInit {
-  processingSettings?: ProcessingSettings;
+  processingSettings?: TransitionProcessingSettings;
   processingSettingsForm?: any;
 
-  // This should be taken from api based on definitions available in raw data table for the experiment
-  dataTypesAvailable: GenericOptions[] = [
-    {value: 'fluorescence'},
-  ]
-  interpolationMethodsAvailable: GenericOptions[] = [
-    {value: 'linear'}, {value: 'quadratic'}, {value: 'cubic'}, {value: 'spline'}, {value: 'polynomial'},
-  ]
-  peakModesAvailable: GenericOptions[] = [
-    {value: 'positive'}, {value: 'negative'}, {value: 'both'},
-  ]
-  peakDerivativesOfAvailable: GenericOptions[] = [
-    {value: 'normalised'}, {value: 'raw'}, {value: 'raw smoothened'},
-  ]
+  firstProcessingThisSession = true;
 
-  constructor(private processingSettingsService: ProcessingSettingsService,
-              private commonService: CommonService) {
-    commonService.experimentSelected$.subscribe(experiment => this.ngOnInit());
+  // This should be taken from api based on definitions available in raw data table for the experiment
+  dataTypesAvailable: string[] = [];
+  interpolationMethodsAvailable: string[] = ['linear', 'quadratic', 'cubic', 'spline', 'polynomial'];
+  dataToDeriveAvailable: string[] = ['normal', 'raw'];
+  filterTypesAvailable: string[] = ['filtfilt', 'savgol'];
+
+  sampleInfo: SampleInfo[] = [];
+  filterPos: string[] = [];
+  previewData: TransitionData[] = [];
+
+  constructor(private commonService: CommonService) {
+    commonService.experimentSelected$.subscribe(experiment => this.importProcessingSettings());
+    commonService.sampleInfoChanged$.subscribe(data => {
+      this.sampleInfo = data;
+    });
   }
 
   ngOnInit(): void {
-    // if (this.commonService.selected) {
-    //   this.importProcessingSettings()
-    // }
   }
 
-  importProcessingSettings() {
-    this.processingSettingsService.fetchProcessingSettings()
+  importProcessingSettings(): void {
+    this.commonService.fetchTransitionProcessingSettings()
       .subscribe(data => {
-        this.processingSettings = data
-        console.log(this.processingSettings)
+        this.processingSettings = data;
+        this.dataTypesAvailable = data.data_types_available;
 
         this.processingSettingsForm = new FormGroup({
           id: new FormControl(this.processingSettings?.id),
+          experiment: new FormControl(this.processingSettings?.experiment),
+          default_settings: new FormControl(this.processingSettings?.default_settings),
+          updated: new FormControl(this.processingSettings?.updated),
+
+          data_types_available: new FormControl(this.processingSettings?.data_types_available),
           selected_data_type: new FormControl(this.processingSettings?.selected_data_type),
-          // flat_blank: new FormControl(this.processingSettings?.flat_blank), // how to implement this? is it needed?
-          skip_outliers: new FormControl(this.processingSettings?.skip_outliers),
 
           truncate_x_min: new FormControl(this.processingSettings?.truncate_x_min),
           truncate_x_max: new FormControl(this.processingSettings?.truncate_x_max),
@@ -105,19 +87,13 @@ export class ProcessingSettingsComponent implements OnInit {
           interpolation_method: new FormControl(this.processingSettings?.interpolation_method),
           interpolation_order: new FormControl(this.processingSettings?.interpolation_order),
 
-          peak_mode: new FormControl(this.processingSettings?.peak_mode),
-          peak_derivative_of: new FormControl(this.processingSettings?.peak_derivative_of),
-          peak_number_limit: new FormControl(this.processingSettings?.peak_number_limit),
+          filter_type: new FormControl(this.processingSettings?.filter_type),
+          savgol_smoothing_coefficient: new FormControl(this.processingSettings?.savgol_smoothing_coefficient),
+          filtfilt_n: new FormControl(this.processingSettings?.filtfilt_n),
+          filtfilt_wn: new FormControl(this.processingSettings?.filtfilt_wn),
 
-          peak_distance: new FormControl(this.processingSettings?.peak_distance),
-          peak_prominence_min: new FormControl(this.processingSettings?.peak_prominence_min),
-          peak_prominence_max: new FormControl(this.processingSettings?.peak_prominence_max),
-          peak_height_min: new FormControl(this.processingSettings?.peak_height_min),
-          peak_height_max: new FormControl(this.processingSettings?.peak_height_max),
-
-          smoothing_coefficient: new FormControl(this.processingSettings?.smoothing_coefficient),
-
-          difference_significance: new FormControl(this.processingSettings?.difference_significance),
+          data_to_derive: new FormControl(this.processingSettings?.data_to_derive),
+          derivative_period: new FormControl(this.processingSettings?.derivative_period),
 
           x_unit: new FormControl(this.processingSettings?.x_unit),
           y_unit: new FormControl(this.processingSettings?.y_unit),
@@ -128,18 +104,40 @@ export class ProcessingSettingsComponent implements OnInit {
       });
   }
 
-  onSubmit () {
-    console.log('These are the updated settings', this.processingSettingsForm.value)
-    this.processingSettingsService.updateProcessingSettings(this.processingSettingsForm.value).subscribe(
-      data => {
-        console.log('form data submitted')
-      }
-    )
-    //TODO: write the service to update settings;
+  resetSettings(): void {
+    this.commonService.restTransitionProcessingSettings().subscribe( data => {
+      this.importProcessingSettings();
+    });
   }
 
-  callDataProcessing () {
-    // should call common service to process data
-    this.commonService.fetchProcessedData()
+  updatePreviewFilter(event: any): void {
+    this.filterPos = event;
+    // and immediately process the data
+    this.previewTransitionProcessing();
   }
+
+  previewTransitionProcessing(): void {
+    // Do nothing if no samples selected
+    if (this.filterPos.length < 1) {
+      return;
+    }
+
+    // first update the settings and process selected samples
+    this.commonService.updateTransitionProcessingSettings(this.processingSettingsForm.getRawValue()).subscribe( settings => {
+      this.processingSettings = settings;
+      this.commonService.postPreviewTransitionProcessing(this.filterPos).subscribe(data => {
+        this.previewData = data;
+      });
+    });
+  }
+
+  callDataProcessing(): void {
+    // first update the settings
+    this.commonService.updateTransitionProcessingSettings(this.processingSettingsForm.getRawValue()).subscribe( data => {
+      this.commonService.fetchProcessedTransitionData();
+    }, error => {
+      console.log('Failed while uploading settings to the backend');
+    });
+  }
+
 }

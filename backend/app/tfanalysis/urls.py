@@ -9,7 +9,9 @@ urlpatterns = [
     path('tfanalysis/deleteexperiment/', views.DeleteExperiment.as_view()),
     path('tfanalysis/fetchsampleinfo/', views.FetchSampleInfo.as_view()),
     path('tfanalysis/updatesampleinfo/', views.UpdateSampleInfo.as_view()),
-    path('tfanalysis/fetchprocessingsettings/', views.FetchProcessingSettings.as_view()),
-    path('tfanalysis/updateprocessingsettings/', views.UpdateProcessingSettings.as_view()),
-    path('tfanalysis/processdata/', views.ProcessData.as_view()),
+    path('tfanalysis/fetchtransitionprocessingsettings/', views.FetchTransitionProcessingSettings.as_view()),
+    path('tfanalysis/updatetransitionprocessingsettings/', views.UpdateTransitionProcessingSettings.as_view()),
+    path('tfanalysis/resettransitionprocessingsettings/', views.ResetTransitionProcessingSettings.as_view()),
+    path('tfanalysis/previewtransitionprocessing/', views.PreviewTransitionProcessing.as_view()),
+    path('tfanalysis/processtransitiondata/', views.ProcessTransitionData.as_view()),
 ]

@@ -1,209 +1,307 @@
-<div *ngIf="processingSettings">
+<div  *ngIf="processingSettings" class="row" style="margin-bottom: 200px">
+  <div class="column" style="max-width: 45%">
 
-  <form [formGroup]="processingSettingsForm" (ngSubmit)="onSubmit()">
+    <form [formGroup]="processingSettingsForm" >
 
-    <!--  DATA TYPE SELECT  -->
-    <div>
-      <mat-form-field appearance="fill" >
-        <mat-label>Data to analyse</mat-label>
-        <mat-select formControlName="selected_data_type" required>
-          <mat-option *ngFor="let option of dataTypesAvailable" [value]="option.value">
-            {{option.value}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
+      <div style="display: inline-flex">
+        <!--  DATA TYPE SELECT  -->
+        <div>
+          <mat-form-field appearance="fill" >
+            <mat-label>Data to process</mat-label>
+            <mat-select formControlName="selected_data_type" required>
+              <mat-option *ngFor="let option of dataTypesAvailable" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
 
-    <!--  SKIP OUTLIERS CHECKBOX  -->
-    <div>
-      <mat-checkbox formControlName="skip_outliers">Skip outliers</mat-checkbox>
-    </div>
-    <!--  TRUNCATE X MIN SLIDER  -->
-    <div>
-      <mat-label>Truncate x axis min</mat-label>
-      <mat-slider formControlName="truncate_x_min" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
-        [value]="processingSettings.truncate_x_min">
-      </mat-slider>
-      {{processingSettingsForm.value.truncate_x_min}}
-    </div>
 
-    <!--  TRUNCATE X MAX SLIDER  -->
-    <div>
-      <mat-label>Truncate x axis max</mat-label>
-      <mat-slider formControlName="truncate_x_max" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
-                  [value]="processingSettings.truncate_x_max">
-      </mat-slider>
-      {{processingSettingsForm.value.truncate_x_max}}
-    </div>
 
-    <!--  INTERPOLATION INDICES SLIDER  -->
-    <div>
-      <mat-label>Interpolation indices</mat-label>
-      <mat-slider formControlName="interpolation_indices" [max]="1" [min]="0.01" [step]="0.01" [thumbLabel]="true"
-                  [value]="processingSettings.interpolation_indices">
-      </mat-slider>
-      {{processingSettingsForm.value.interpolation_indices}}
-    </div>
+        <button mat-raised-button color="primary" (click)="callDataProcessing()"  style="margin-left: 20px; max-height: 50px">Process data</button>
 
-    <!--  INTERPOLATION METHOD SELECT  -->
-    <div>
-      <mat-form-field appearance="fill" >
-        <mat-label>Interpolation method</mat-label>
-        <mat-select formControlName="interpolation_method" required>
-          <mat-option *ngFor="let option of interpolationMethodsAvailable" [value]="option.value">
-            {{option.value}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <!--  INTERPOLATION ORDER SLIDER // SPLINE -->
-    <div *ngIf="'spline' == processingSettingsForm.value.interpolation_method">
-      <mat-label>Interpolation order</mat-label>
-      <mat-slider formControlName="interpolation_order" [max]="5" [min]="1" [step]="1" [thumbLabel]="true"
-                  [value]="processingSettings.interpolation_order">
-      </mat-slider>
-      {{processingSettingsForm.value.interpolation_order}}
-    </div>
-
-    <!--  INTERPOLATION ORDER SLIDER // POLYNOMIAL  -->
-    <div *ngIf="'polynomial' == processingSettingsForm.value.interpolation_method">
-      <mat-label>Interpolation order</mat-label>
-      <mat-slider formControlName="interpolation_order" [max]="9" [min]="1" [step]="2" [thumbLabel]="true"
-                  [value]="processingSettings.interpolation_order">
-      </mat-slider>
-      {{processingSettingsForm.value.interpolation_order}}
-    </div>
-
-    <!--  PEAK MODE SELECT  -->
-    <div>
-      <mat-form-field appearance="fill" >
-        <mat-label>Peak finding mode</mat-label>
-        <mat-select formControlName="peak_mode" required>
-          <mat-option *ngFor="let option of peakModesAvailable" [value]="option.value">
-            {{option.value}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <!--  PEAK DERIVATIVE OF SELECT  -->
-    <div>
-      <mat-form-field appearance="fill" >
-        <mat-label>Select data for peak finding</mat-label>
-        <mat-select formControlName="peak_derivative_of" required>
-          <mat-option *ngFor="let option of peakDerivativesOfAvailable" [value]="option.value">
-            {{option.value}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-      <div *ngIf="processingSettingsForm.value.peak_derivative_of.includes('raw')">
-        Note that for raw data peak finding settings become relative to max y value in entire dataset
       </div>
+
+      <mat-divider></mat-divider>
+      <h3>Derivative options</h3>
+      <div style="display: inline-flex">
+
+        <!--  DERIVATIVE OF SELECT  -->
+        <div>
+          <mat-form-field appearance="fill" >
+            <mat-label>Select data to derive</mat-label>
+            <mat-select formControlName="data_to_derive" required>
+              <mat-option *ngFor="let option of dataToDeriveAvailable" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+
+        <!--  DERIVATIVE PERIOD SLIDER  -->
+        <div style="margin-left: 20px">
+          <mat-label>Period (data points)</mat-label>
+          <mat-slider formControlName="derivative_period" [max]="20" [min]="1" [step]="1" [thumbLabel]="true"
+                      [value]="processingSettings.derivative_period">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.derivative_period}}</b>
+        </div>
+
+      </div>
+
+
+      <mat-divider></mat-divider>
+      <h3>Truncate data</h3>
+      <div style="display: inline-flex">
+        <!--  TRUNCATE X MIN SLIDER  -->
+        <div>
+          <mat-label>x min</mat-label>
+          <mat-slider formControlName="truncate_x_min" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
+            [value]="processingSettings.truncate_x_min">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.truncate_x_min}}</b>
+        </div>
+
+        <!--  TRUNCATE X MAX SLIDER  -->
+        <div style="margin-left: 20px">
+          <mat-label>x max</mat-label>
+          <mat-slider formControlName="truncate_x_max" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
+                      [value]="processingSettings.truncate_x_max">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.truncate_x_max}}</b>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+      <h3>Interpolation</h3>
+      <div style="display: inline-flex">
+      <!--  INTERPOLATION INDICES SLIDER  -->
+        <div>
+          <mat-label>Indices</mat-label>
+          <mat-slider formControlName="interpolation_indices" [max]="1" [min]="0.01" [step]="0.01" [thumbLabel]="true"
+                      [value]="processingSettings.interpolation_indices">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.interpolation_indices}}</b>
+        </div>
+
+        <!--  INTERPOLATION METHOD SELECT  -->
+        <div style="margin-left: 20px">
+          <mat-form-field appearance="fill" >
+            <mat-label>Interpolation method</mat-label>
+            <mat-select formControlName="interpolation_method" required>
+              <mat-option *ngFor="let option of interpolationMethodsAvailable" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!--  INTERPOLATION ORDER SLIDER // SPLINE -->
+        <div *ngIf="'spline' == processingSettingsForm.value.interpolation_method" style="margin-left: 20px">
+          <mat-label>Order</mat-label>
+          <mat-slider formControlName="interpolation_order" [max]="5" [min]="1" [step]="1" [thumbLabel]="true"
+                      [value]="processingSettings.interpolation_order">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.interpolation_order}}</b>
+        </div>
+
+        <!--  INTERPOLATION ORDER SLIDER // POLYNOMIAL  -->
+        <div *ngIf="'polynomial' == processingSettingsForm.value.interpolation_method" style="margin-left: 20px">
+          <mat-label>Order</mat-label>
+          <mat-slider formControlName="interpolation_order" [max]="9" [min]="1" [step]="2" [thumbLabel]="true"
+                      [value]="processingSettings.interpolation_order">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.interpolation_order}}</b>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+      <h3>Data filtering</h3>
+      <div style="display: inline-flex">
+        <!--  FILTER METHOD SELECT  -->
+        <div>
+          <mat-form-field appearance="fill" >
+            <mat-label>Filter type</mat-label>
+            <mat-select formControlName="filter_type" required>
+              <mat-option *ngFor="let option of filterTypesAvailable" [value]="option">
+                {{option}}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!--  FILFILT N -->
+        <div *ngIf="'filtfilt' == processingSettingsForm.value.filter_type" style="margin-left: 20px">
+          <mat-label>Butterworth filter N</mat-label>
+          <mat-slider formControlName="filtfilt_n" [max]="10" [min]="1" [step]="1" [thumbLabel]="true"
+                      [value]="processingSettings.filtfilt_n">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.filtfilt_n}}</b>
+        </div>
+
+        <!--  FILFILT Wn -->
+        <div *ngIf="'filtfilt' == processingSettingsForm.value.filter_type" style="margin-left: 20px">
+          <mat-label>Butterworth filter Wn</mat-label>
+          <mat-slider formControlName="filtfilt_wn" [max]="1" [min]="0.005" [step]="0.005" [thumbLabel]="true"
+                      [value]="processingSettings.filtfilt_wn">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.filtfilt_wn}}</b>
+        </div>
+
+        <!--  SAVGOL SMOOTHING COEFFICIENT SLIDER  -->
+        <div  *ngIf="'savgol' == processingSettingsForm.value.filter_type" style="margin-left: 20px">
+          <mat-label>Smoothing coefficient</mat-label>
+          <mat-slider formControlName="savgol_smoothing_coefficient" [max]="90" [min]="1" [step]="1" [thumbLabel]="true"
+                      [value]="processingSettings.savgol_smoothing_coefficient">
+          </mat-slider>
+          <b>{{processingSettingsForm.value.savgol_smoothing_coefficient}}%</b>
+        </div>
+
+      </div>
+
+      <mat-divider></mat-divider>
+      <h3>Axis labels</h3>
+      <div style="display: inline-flex">
+
+        <!--  X LABEL INPUT  -->
+        <mat-form-field>
+          <mat-label>X axis label</mat-label>
+          <input matInput formControlName="x_label" [value]="processingSettings.x_label">
+        </mat-form-field>
+
+        <!--  X UNIT INPUT  -->
+        <mat-form-field style="margin-left: 20px">
+          <mat-label>X axis unit</mat-label>
+          <input matInput formControlName="x_unit" [value]="processingSettings.x_unit">
+        </mat-form-field>
+
+      </div>
+
+      <div style="display: inline-flex">
+
+        <!--  Y LABEL INPUT  -->
+        <mat-form-field>
+          <mat-label>Y axis label</mat-label>
+          <input matInput formControlName="y_label" [value]="processingSettings.y_label">
+        </mat-form-field>
+
+        <!--  Y UNIT INPUT  -->
+        <mat-form-field style="margin-left: 20px">
+          <mat-label>Y axis unit</mat-label>
+          <input matInput formControlName="y_unit" [value]="processingSettings.y_unit">
+        </mat-form-field>
+
+      </div>
+
+<!-- Don't really need a submit button since that's what 'process data' does. And preview saves the settings anyway -->
+<!--      <button mat-button type="submit">Save settings</button>-->
+
+    </form>
+
+    <div style="display: inline-flex">
+      <button mat-raised-button (click)="resetSettings()" color="accent">Reset settings</button>
+
     </div>
 
-    <!--  PEAK LIMIT SLIDER  -->
-    <div>
-      <mat-label>Max peaks to find</mat-label>
-      <mat-slider formControlName="peak_number_limit" [max]="10" [min]="1" [step]="1" [thumbLabel]="true"
-                  [value]="processingSettings.peak_number_limit">
-      </mat-slider>
-      {{processingSettingsForm.value.peak_number_limit}}
-    </div>
 
-    <!--  PEAK DISTANCE SLIDER  -->
-    <div>
-      <mat-label>Distance between peaks</mat-label>
-      <mat-slider formControlName="peak_distance" [max]="10" [min]="0.1" [step]="0.1" [thumbLabel]="true"
-                  [value]="processingSettings.peak_distance">
-      </mat-slider>
-      {{processingSettingsForm.value.peak_distance}}
-    </div>
-
-    <!--  PEAK PROMINENCE MIN SLIDER TODO: starting value may be too high -->
-    <div>
-      <mat-label>Min peak prominence</mat-label>
-      <mat-slider formControlName="peak_prominence_min" [max]="0.25" [min]="0.0" [step]="0.001" [thumbLabel]="true"
-                  [value]="processingSettings.peak_prominence_min">
-      </mat-slider>
-      {{processingSettingsForm.value.peak_prominence_min}}
-    </div>
-
-    <!--  PEAK PROMINENCE MAX SLIDER  -->
-    <div>
-      <mat-label>Max peak prominence</mat-label>
-      <mat-slider formControlName="peak_prominence_max" [max]="1" [min]="0.25" [step]="0.01" [thumbLabel]="true"
-                  [value]="processingSettings.peak_prominence_max">
-      </mat-slider>
-      {{processingSettingsForm.value.peak_prominence_max}}
-    </div>
-
-    <!--  PEAK HEIGHT MIN SLIDER TODO: starting value may be too high -->
-    <div>
-      <mat-label>Min peak height</mat-label>
-      <mat-slider formControlName="peak_height_min" [max]="0.25" [min]="0.0" [step]="0.001" [thumbLabel]="true"
-                  [value]="processingSettings.peak_height_min">
-      </mat-slider>
-      {{processingSettingsForm.value.peak_height_min}}
-    </div>
-
-    <!--  PEAK HEIGHT MAX SLIDER  -->
-    <div>
-      <mat-label>Max peak height</mat-label>
-      <mat-slider formControlName="peak_height_max" [max]="1" [min]="0.25" [step]="0.01" [thumbLabel]="true"
-                  [value]="processingSettings.peak_height_max">
-      </mat-slider>
-      {{processingSettingsForm.value.peak_height_max}}
-    </div>
-
-    <!--  DATA SMOOTHING COEFFICIENT SLIDER  -->
-    <div>
-      <mat-label>Smoothing coefficient</mat-label>
-      <mat-slider formControlName="smoothing_coefficient" [max]="90" [min]="1" [step]="1" [thumbLabel]="true"
-                  [value]="processingSettings.smoothing_coefficient">
-      </mat-slider>
-      {{processingSettingsForm.value.smoothing_coefficient}}%
-    </div>
-
-    <!--  DIFFERENCE SIGNIFICANCE SLIDER  -->
-    <div>
-      <mat-label>Heatmap significant difference</mat-label>
-      <mat-slider formControlName="difference_significance" [max]="10" [min]="0.1" [step]="0.1" [thumbLabel]="true"
-                  [value]="processingSettings.difference_significance">
-      </mat-slider>
-      {{processingSettingsForm.value.difference_significance}}
-    </div>
-
-    <!--  X UNIT INPUT  -->
-    <mat-form-field>
-      <mat-label>X axis unit</mat-label>
-      <input matInput formControlName="x_unit" [value]="processingSettings.x_unit">
-    </mat-form-field>
-
-    <!--  X LABEL INPUT  -->
-    <mat-form-field>
-      <mat-label>X axis label</mat-label>
-      <input matInput formControlName="x_label" [value]="processingSettings.x_label">
-    </mat-form-field>
-
-    <!--  Y UNIT INPUT  -->
-    <mat-form-field>
-      <mat-label>Y axis unit</mat-label>
-      <input matInput formControlName="y_unit" [value]="processingSettings.y_unit">
-    </mat-form-field>
-
-    <!--  Y LABEL INPUT  -->
-    <mat-form-field>
-      <mat-label>Y axis label</mat-label>
-      <input matInput formControlName="y_label" [value]="processingSettings.y_label">
-    </mat-form-field>
-
-    <button mat-button type="submit">Save settings</button>
-
-  </form>
-
-  <div>
-    <button mat-button (click)="callDataProcessing()">Process data</button>
   </div>
 
+  <div class="column" style="max-width: 55%;">
+
+    <h2>Transition processing preview</h2>
+
+    <div style="display: inline-flex">
+      <app-sample-selector [sampleInfo]="sampleInfo" (filterPos)="updatePreviewFilter($event)"></app-sample-selector>
+
+
+      <button mat-raised-button color="accent" (click)="previewTransitionProcessing()"  style="max-height: 40px; margin-left: 20px">Preview</button>
+
+    </div>
+
+    <app-data-preview
+      [previewData]="previewData"
+      [sampleInfo]="sampleInfo"
+      [processingSettings]="processingSettings"
+    ></app-data-preview>
+
+  </div>
+
+
 </div>
+
+<!--    &lt;!&ndash;  SKIP OUTLIERS CHECKBOX  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-checkbox formControlName="skip_outliers">Skip outliers</mat-checkbox>-->
+<!--    </div>-->
+<!--    &lt;!&ndash;  PEAK LIMIT SLIDER  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Max peaks to find</mat-label>-->
+<!--      <mat-slider formControlName="peak_number_limit" [max]="10" [min]="1" [step]="1" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.peak_number_limit">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.peak_number_limit}}-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  PEAK DISTANCE SLIDER  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Distance between peaks</mat-label>-->
+<!--      <mat-slider formControlName="peak_distance" [max]="10" [min]="0.1" [step]="0.1" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.peak_distance">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.peak_distance}}-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  PEAK PROMINENCE MIN SLIDER TODO: starting value may be too high &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Min peak prominence</mat-label>-->
+<!--      <mat-slider formControlName="peak_prominence_min" [max]="0.25" [min]="0.0" [step]="0.001" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.peak_prominence_min">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.peak_prominence_min}}-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  PEAK PROMINENCE MAX SLIDER  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Max peak prominence</mat-label>-->
+<!--      <mat-slider formControlName="peak_prominence_max" [max]="1" [min]="0.25" [step]="0.01" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.peak_prominence_max">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.peak_prominence_max}}-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  PEAK HEIGHT MIN SLIDER TODO: starting value may be too high &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Min peak height</mat-label>-->
+<!--      <mat-slider formControlName="peak_height_min" [max]="0.25" [min]="0.0" [step]="0.001" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.peak_height_min">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.peak_height_min}}-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  PEAK HEIGHT MAX SLIDER  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Max peak height</mat-label>-->
+<!--      <mat-slider formControlName="peak_height_max" [max]="1" [min]="0.25" [step]="0.01" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.peak_height_max">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.peak_height_max}}-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  DATA SMOOTHING COEFFICIENT SLIDER  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Smoothing coefficient</mat-label>-->
+<!--      <mat-slider formControlName="smoothing_coefficient" [max]="90" [min]="1" [step]="1" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.smoothing_coefficient">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.smoothing_coefficient}}%-->
+<!--    </div>-->
+
+<!--    &lt;!&ndash;  DIFFERENCE SIGNIFICANCE SLIDER  &ndash;&gt;-->
+<!--    <div>-->
+<!--      <mat-label>Heatmap significant difference</mat-label>-->
+<!--      <mat-slider formControlName="difference_significance" [max]="10" [min]="0.1" [step]="0.1" [thumbLabel]="true"-->
+<!--                  [value]="processingSettings.difference_significance">-->
+<!--      </mat-slider>-->
+<!--      {{processingSettingsForm.value.difference_significance}}-->
+<!--    </div>-->

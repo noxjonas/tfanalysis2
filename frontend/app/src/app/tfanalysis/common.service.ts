@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { EventEmitter } from '@angular/core';
 import {Observable} from 'rxjs';
-import {ProcessingSettings} from './processing-settings/processing-settings.component';
+import {TransitionProcessingSettings} from './processing-settings/processing-settings.component';
 import {environment} from '../../environments/environment';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {SampleInfo} from './sample-info/sample-info.component';
@@ -32,41 +32,60 @@ export interface Experiment {
   expanded?: false;
 }
 
+// export interface TransitionData {
+//   experiment: number;
+//   processing_info: number;
+//   raw_data: number;
+//   pos: string;
+//   scatter_raw_x: number[];
+//   scatter_raw_y: number[];
+//   scatter_regular_x: number[];
+//   scatter_regular_y: number[];
+//   scatter_normal_y: number[];
+//   scatter_smooth_y: number[];
+//   scatter_first_der_y: number[];
+//   all_peaks: number[];
+//   top_peak: number;
+//   [key: string]: any;
+// }
+
 export interface TransitionData {
-  experiment: number;
-  processing_info: number;
-  raw_data: number;
+  id?: number;
+  experiment?: number;
+  processing_settings?: number;
+  raw_data?: number;
+
   pos: string;
-  scatter_raw_x: number[];
-  scatter_raw_y: number[];
-  scatter_regular_x: number[];
-  scatter_regular_y: number[];
-  scatter_normal_y: number[];
-  scatter_smooth_y: number[];
-  scatter_first_der_y: number[];
-  all_peaks: number[];
-  top_peak: number;
+
+  raw_x: number[];
+  raw_y: number[];
+  regular_x: number[];
+  regular_y: number[];
+  normal_y: number[];
+  smooth_y: number[];
+  first_der_y: number[];
   [key: string]: any;
 }
 
-export class TransitionData {
-  constructor(
-    public experiment: number,
-    public processing_info: number,
-    public raw_data: number,
-    public pos: string,
-    public scatter_raw_x: number[],
-    public scatter_raw_y: number[],
-    public scatter_regular_x: number[],
-    public scatter_regular_y: number[],
-    public scatter_normal_y: number[],
-    public scatter_smooth_y: number[],
-    public scatter_first_der_y: number[],
-    public all_peaks: number[],
-    public top_peak: number,
 
-  ) {}
-}
+// export class TransitionData {
+//   constructor(
+//     public experiment: number,
+//     public processing_info: number,
+//     public raw_data: number,
+//     public pos: string,
+//     public scatter_raw_x: number[],
+//     public scatter_raw_y: number[],
+//     public scatter_regular_x: number[],
+//     public scatter_regular_y: number[],
+//     public scatter_normal_y: number[],
+//     public scatter_smooth_y: number[],
+//     public scatter_first_der_y: number[],
+//     public all_peaks: number[],
+//     public top_peak: number,
+//
+//   ) {}
+// }
 
 @Injectable({
   providedIn: 'root'
@@ -91,6 +110,12 @@ export class CommonService {
     this.sampleInfoChanged$ = new EventEmitter();
   }
 
+  jsonHttpOptions = {
+    headers: new HttpHeaders({
+      'Content-Type': 'application/json'
+    })
+  };
+
   private _fetchParsers(): Observable<any> {
     return this.http.get<Parsers[]>(environment.baseApiUrl + 'tfanalysis/fetchparsers/');
   }
@@ -109,7 +134,7 @@ export class CommonService {
     return this.http.post<Experiment[]>(environment.baseApiUrl + 'tfanalysis/fetchexperiments/', null);
   }
 
-  public selectExperiment(experiment: any) {
+  public selectExperiment(experiment: any): Experiment {
     this.selected = experiment;
     this.experimentSelected$.emit(experiment);
     return this.selected;
@@ -125,46 +150,11 @@ export class CommonService {
         'Content-Type': 'application/json'
       })
     };
-    return this.http.put<any>(environment.baseApiUrl + 'tfanalysis/updateexperimentinfo/', JSON.stringify(formGroupRaw), httpOptions);
+    return this.http.put<any>(environment.baseApiUrl + 'tfanalysis/updateexperimentinfo/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
   }
 
   deleteExperiment(experimentId: number): Observable<any> {
-    const httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/deleteexperiment/', JSON.stringify({id: experimentId}), httpOptions);
-  }
-
-  // Need to fix implementation on this, as it should just take data if settings weren't changed?
-  // Perhaps post settings and if they haven't changed api will just return already existing processed data
-  private postProcessData(): Observable<any> {
-    this.transitionsProcessingStarted$.emit();
-    const formData = new FormData();
-    formData.append('experiment_id', String(this.selected.id));
-    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/processdata/', formData);
-  }
-
-  public fetchProcessedData(): void {
-    this.postProcessData().subscribe(
-      data => {
-        this.transitionData = data;
-        this.transitionsProcessed$.emit(true);
-      }
-    );
-  }
-
-  public postSampleInfo(sampleInfo: any): Observable<any> {
-    const httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    console.log('what does sample info look like', sampleInfo);
-    this.sampleInfoChanged$.emit(sampleInfo);
-    this.sampleInfoData = sampleInfo;
-    return this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/', JSON.stringify(sampleInfo), httpOptions);
+    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/deleteexperiment/', JSON.stringify({id: experimentId}), this.jsonHttpOptions);
   }
 
   private _fetchSampleInfo(): Observable<any> {
@@ -181,8 +171,51 @@ export class CommonService {
         this.sampleInfoChanged$.emit(data);
       });
   }
-  // public shareSampleInfo(sampleInfo: any) {
-  //   this.sampleInfoChanged$.emit(sampleInfo);
-  // }
+  public postSampleInfo(sampleInfo: any): Observable<any> {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json'
+      })
+    };
+    console.log('what does sample info look like', sampleInfo);
+    this.sampleInfoChanged$.emit(sampleInfo);
+    this.sampleInfoData = sampleInfo;
+    return this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/', JSON.stringify(sampleInfo), this.jsonHttpOptions);
+  }
+
+  fetchTransitionProcessingSettings(): Observable<TransitionProcessingSettings> {
+    return this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/fetchtransitionprocessingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  }
+
+  updateTransitionProcessingSettings(formGroupRaw: string): Observable<any> {
+    return this.http.put<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/updatetransitionprocessingsettings/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
+  }
+
+  restTransitionProcessingSettings(): Observable<any> {
+    return this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/resettransitionprocessingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  }
+
+  postPreviewTransitionProcessing(filterPos: string[]): Observable<TransitionData[]> {
+    return this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/previewtransitionprocessing/', JSON.stringify({id: this.selected.id, filter: filterPos}), this.jsonHttpOptions);
+  }
+
+
+  private postProcessTransitionData(): Observable<TransitionData[]> {
+    this.transitionsProcessingStarted$.emit();
+    return this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/processtransitiondata/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  }
+
+  public fetchProcessedTransitionData(): void {
+    this.postProcessTransitionData().subscribe(
+      data => {
+        this.transitionData = data;
+        this.transitionsProcessed$.emit(true);
+      }, error => {
+        // TODO: implement error dialog
+        console.log('Processing of all transitions failed');
+        this.transitionsProcessed$.emit(true);
+      }
+    );
+  }
 
 }

@@ -15,7 +15,10 @@ export class TfanalysisComponent implements AfterViewInit {
 
   constructor(private commonService: CommonService) {
     commonService.transitionsProcessingStarted$.subscribe(data => (this.loading = true));
-    commonService.transitionsProcessed$.subscribe(data => (this.loading = false));
+    commonService.transitionsProcessed$.subscribe(data => {
+      this.selectedTab.setValue(5);
+      this.loading = false;
+    });
   }
   ngAfterViewInit(): void {
   }
@@ -26,7 +29,10 @@ export class TfanalysisComponent implements AfterViewInit {
 
   onRawUploadSuccess(status: any): void {
     this.selectedTab.setValue(3);
-    console.log('Data successfully parsed');
+  }
+
+  onTransitionProcessingSuccess(status: any): void {
+    this.selectedTab.setValue(5);
   }
 
 }
