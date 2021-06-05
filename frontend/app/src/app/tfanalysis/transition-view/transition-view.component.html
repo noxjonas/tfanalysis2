@@ -1,34 +1,42 @@
-<div *ngIf="transitionData" >
+<div *ngIf="transitionData">
 
-  <app-transition-filter
-    (filtersChanged)="sharePosFilter($event)"
-    [samples]="samples">
-  </app-transition-filter>
-  <mat-divider></mat-divider>
-
-  <div style="margin-left: 30px">
-    <section>
-      <h2 style="display: inline; margin-right: 10px">Plot data:</h2>
-      <mat-button-toggle-group [(ngModel)]="plotDataType" aria-label="Font Style">
-<!--        <mat-button-toggle value="raw">Raw data</mat-button-toggle>-->
-        <mat-button-toggle value="regular">Regularised data</mat-button-toggle>
-        <mat-button-toggle value="smooth">Smoothened data</mat-button-toggle>
-        <mat-button-toggle value="normal">Normalised data</mat-button-toggle>
-        <mat-button-toggle value="first_der">First derivative data</mat-button-toggle>
-      </mat-button-toggle-group>
-<!--      <p>Chosen value is {{fontStyle}}</p>-->
-    </section>
-    <button (click)="testCall()">call</button>
+  <div class="row">
+    <div class="column" style="max-width: 35%">
+      <app-peak-finding-settings></app-peak-finding-settings>
+    </div>
 
 
-    <app-transition-plot style="margin-left: 30px"
-      *ngIf="filterPosArr"
-      [transitionData]="transitionData"
-      [plotDataType]="plotDataType"
-      [filterPosArr]="filterPosArr"
-      [samples]="samples"
-    ></app-transition-plot>
+    <div class="column" style="max-width: 65%">
+      <app-transition-filter
+        (filtersChanged)="sharePosFilter($event)"
+        [samples]="samples">
+      </app-transition-filter>
+      <mat-divider></mat-divider>
+
+      <div style="margin-left: 30px">
+        <section>
+          <h2 style="display: inline; margin-right: 10px">Plot data:</h2>
+          <mat-button-toggle-group [(ngModel)]="plotDataType" aria-label="Font Style">
+    <!--        <mat-button-toggle value="raw">Raw data</mat-button-toggle>-->
+            <mat-button-toggle value="regular">Regularised data</mat-button-toggle>
+            <mat-button-toggle value="smooth">Smoothened data</mat-button-toggle>
+            <mat-button-toggle value="normal">Normalised data</mat-button-toggle>
+            <mat-button-toggle value="first_der">First derivative data</mat-button-toggle>
+          </mat-button-toggle-group>
+    <!--      <p>Chosen value is {{fontStyle}}</p>-->
+        </section>
+        <button (click)="testCall()">call</button>
+
+
+        <app-transition-plot style="margin-left: 30px"
+          *ngIf="filterPosArr"
+          [transitionData]="transitionData"
+          [plotDataType]="plotDataType"
+          [filterPosArr]="filterPosArr"
+          [samples]="samples"
+          [peaks]="peaks"
+        ></app-transition-plot>
+      </div>
+    </div>
   </div>
-
-
 </div>

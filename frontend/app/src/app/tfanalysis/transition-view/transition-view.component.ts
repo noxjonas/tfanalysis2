@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild, Output } from '@angular/core';
 import {TransitionViewService} from './transition-view.service';
-import {CommonService} from '../common.service';
+import {CommonService, PeakData} from '../common.service';
 import { TransitionData } from '../common.service';
 import {MatPaginator} from '@angular/material/paginator';
 import {TransitionPlotComponent} from './transition-plot/transition-plot.component';
@@ -20,6 +20,7 @@ export class TransitionViewComponent implements OnInit {
   selected: any[] = [];
   filterPosArr: string[] = [];
   samples: SampleInfo[] = [];
+  peaks: PeakData[] = [];
 
   constructor(private transitionViewService: TransitionViewService,
               private commonService: CommonService,
@@ -29,6 +30,9 @@ export class TransitionViewComponent implements OnInit {
     commonService.experimentSelected$.subscribe(experiment => this.ngOnInit());
     commonService.sampleInfoChanged$.subscribe(data => {
       this.samples = data;
+    });
+    commonService.peakFindingComplete$.subscribe(data => {
+      this.peaks = this.commonService.peakData;
     });
   }
 

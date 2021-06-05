@@ -58,21 +58,21 @@ class ModelDiffMixin(object):
         TEMPORARY MODELS WHILE DOING SIGNIFICANT FIXING
 '''
 #Experiment DefaultProcessingSettings, ProcessingSettings, ProcessedDsfData
-
-class Experiment(models.Model):
-    id_a = models.IntegerField()
-
-class DefaultProcessingSettings(models.Model):
-    id_a = models.IntegerField()
-
-class ProcessingSettings(models.Model):
-    id_a = models.IntegerField()
-
-class ProcessedDsfData(models.Model):
-    id_a = models.IntegerField()
-
-class ProcessedData(models.Model):
-    id_a = models.IntegerField()
+#
+# class Experiment(models.Model):
+#     id_a = models.IntegerField()
+#
+# class DefaultProcessingSettings(models.Model):
+#     id_a = models.IntegerField()
+#
+# class ProcessingSettings(models.Model):
+#     id_a = models.IntegerField()
+#
+# class ProcessedDsfData(models.Model):
+#     id_a = models.IntegerField()
+#
+# class ProcessedData(models.Model):
+#     id_a = models.IntegerField()
 
 
 """
@@ -236,7 +236,7 @@ class ProcessedTransitionData(models.Model):
         ordering = ['pos']
 
 
-class DefaultPeakProcessingSettings(models.Model):
+class DefaultPeakFindingSettings(models.Model):
     parser = models.ForeignKey(Parsers, on_delete=models.CASCADE)
 
     limit_x_min = models.FloatField()
@@ -256,16 +256,16 @@ class DefaultPeakProcessingSettings(models.Model):
     threshold_min = models.FloatField(default=0.005) # not actually used
     threshold_max = models.FloatField(default=1.0) # not actually used
 
-    top_peak_logic = models.CharField(max_length=50)  # One of: 'highest', 'smallest', 'leftmost', 'rightmost' or 'index'
-    top_peak_logic_index = models.IntegerField(blank=True, default=0)
+    # top_peak_logic = models.CharField(max_length=50)  # One of: 'highest', 'smallest', 'leftmost', 'rightmost' or 'index'
+    # top_peak_logic_index = models.IntegerField(blank=True, default=0)
 
     class Meta:
-        db_table = 'default_peak_processing_settings'
+        db_table = 'default_peak_finding_settings'
 
-
-class PeakProcessingSettings(models.Model):
+# TODO: rename to peak finding; processing will deal with peak selection
+class PeakFindingSettings(models.Model, ModelDiffMixin):
     experiment = models.ForeignKey(Experiments, on_delete=models.CASCADE) # I will also get sample info from this
-    default_settings = models.ForeignKey(DefaultPeakProcessingSettings, on_delete=models.CASCADE)
+    default_settings = models.ForeignKey(DefaultPeakFindingSettings, on_delete=models.CASCADE)
     updated = models.DateTimeField(auto_now=True)
 
     limit_x_min = models.FloatField()
@@ -285,29 +285,26 @@ class PeakProcessingSettings(models.Model):
     threshold_min = models.FloatField() # not actually used
     threshold_max = models.FloatField() # not actually used
 
-    top_peak_logic = models.CharField(max_length=50)  # 'fastest', 'slowest', 'leftmost', 'rightmost', 'index'
-    top_peak_logic_index = models.IntegerField(blank=True)
+    # top_peak_logic = models.CharField(max_length=50)  # 'fastest', 'slowest', 'leftmost', 'rightmost', 'index'
+    # top_peak_logic_index = models.IntegerField(blank=True)
 
     class Meta:
-        db_table = 'peak_processing_settings'
+        db_table = 'peak_finding_settings'
 
 
-class ProcessedPeakData(models.Model):
+class PeakData(models.Model):
     experiment = models.ForeignKey(Experiments, on_delete=models.CASCADE)
-    processing_settings = models.ForeignKey(PeakProcessingSettings, on_delete=models.CASCADE)
-    raw_data = models.ForeignKey(RawData, on_delete=models.CASCADE) # either in both sample info and here or neither
+    processing_settings = models.ForeignKey(PeakFindingSettings, on_delete=models.CASCADE)
+    transition_data = models.ForeignKey(ProcessedTransitionData, on_delete=models.CASCADE) # either in both sample info and here or neither
 
     pos = models.CharField(max_length=16)
-    # all information required to make visuals should be made available here
-    all_peaks = ArrayField(models.FloatField())
-    top_peak = models.FloatField()
 
-    top_peak_blank_diff = models.FloatField()
-    top_peak_hill_coeff = models.FloatField()
-    top_peak_hill_coeff_blank_diff = models.FloatField()
+    x = ArrayField(models.FloatField())
+    y = ArrayField(models.FloatField())
+    index = ArrayField(models.IntegerField())
 
     class Meta:
-        db_table = 'processed_peak_data'
+        db_table = 'peak_data'
         ordering = ['pos']
 
 

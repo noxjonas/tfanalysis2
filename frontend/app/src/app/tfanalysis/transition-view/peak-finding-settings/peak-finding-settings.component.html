@@ -1,0 +1,174 @@
+<div>
+<div  *ngIf="peakFindingSettings">
+  <h2>Peak finding settings</h2>
+
+  <form [formGroup]="peakFindingSettingsForm" >
+    <div style="display: inline-flex">
+      <!--  PEAK MODE SELECT  -->
+      <div>
+        <mat-form-field appearance="fill" >
+          <mat-label>Peak mode</mat-label>
+          <mat-select formControlName="peak_mode" required>
+            <mat-option *ngFor="let option of peakModesAvailable" [value]="option">
+              {{option}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <button mat-raised-button color="primary" (click)="callPeakFinding()"  style="margin-left: 20px; max-height: 50px">Find peaks</button>
+
+    </div>
+
+    <div style="display: inline-flex">
+
+      <!--  PEAK LIMIT SLIDER  -->
+      <div>
+        <mat-label>Limit peaks</mat-label>
+        <mat-slider formControlName="number_limit" [max]="10" [min]="1" [step]="1" [thumbLabel]="true"
+                    [value]="peakFindingSettings.number_limit">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.number_limit}}</b>
+      </div>
+
+      <!--  PEAK DISTANCE SLIDER  TODO: might need to convert to indices in processor-->
+      <div style="margin-left: 20px">
+        <mat-label>Distance between</mat-label>
+        <mat-slider formControlName="distance" [max]="10" [min]="0" [step]="0.1" [thumbLabel]="true"
+                    [value]="peakFindingSettings.distance">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.distance}}</b>
+      </div>
+    </div>
+
+
+
+
+    <mat-divider></mat-divider>
+    <h3>Limit search area</h3>
+    <div style="display: inline-flex">
+      <!--  LIMIT X MIN SLIDER  -->
+      <div>
+        <mat-label>x min</mat-label>
+        <mat-slider formControlName="limit_x_min" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
+                    [value]="peakFindingSettings.limit_x_min">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.limit_x_min}}</b>
+      </div>
+
+      <!--  LIMIT X MAX SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>x max</mat-label>
+        <mat-slider formControlName="limit_x_max" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
+                    [value]="peakFindingSettings.limit_x_max">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.limit_x_max}}</b>
+      </div>
+    </div>
+
+
+    <mat-divider></mat-divider>
+    <h3>Peak properties</h3>
+
+
+    <div style="display: inline-flex" class="center">
+      <h4><b>Width</b></h4>
+      <!--  WIDTH MIN SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>x min</mat-label>
+        <mat-slider formControlName="width_min" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
+                    [value]="peakFindingSettings.width_min">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.width_min}}</b>
+      </div>
+
+      <!--  WIDTH MAX SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>x max</mat-label>
+        <mat-slider formControlName="width_max" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
+                    [value]="peakFindingSettings.width_max">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.width_max}}</b>
+      </div>
+    </div>
+
+
+
+    <div style="display: inline-flex" class="center">
+      <h4><b>Height</b></h4>
+      <!--  HEIGHT MIN SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>y min</mat-label>
+        <mat-slider formControlName="height_min" [max]="0.005" [min]="0" [step]="0.00001" [thumbLabel]="true"
+                    [value]="peakFindingSettings.height_min">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.height_min}}</b>
+      </div>
+
+      <!--  HEIGHT MAX SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>y max</mat-label>
+        <mat-slider formControlName="height_max" [max]="0.005" [min]="0" [step]="0.0005" [thumbLabel]="true"
+                    [value]="peakFindingSettings.height_max">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.height_max}}</b>
+      </div>
+    </div>
+
+
+
+    <div style="display: inline-flex" class="center">
+      <h4><b>Prominence</b></h4>
+      <!--  PROMINENCE MIN SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>y min</mat-label>
+        <mat-slider formControlName="prominence_min" [max]="0.005" [min]="0" [step]="0.00001" [thumbLabel]="true"
+                    [value]="peakFindingSettings.prominence_min">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.prominence_min}}</b>
+      </div>
+
+      <!--  PROMINENCE MAX SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>y max</mat-label>
+        <mat-slider formControlName="prominence_max" [max]="0.1" [min]="0" [step]="0.001" [thumbLabel]="true"
+                    [value]="peakFindingSettings.prominence_max">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.prominence_max}}</b>
+      </div>
+    </div>
+
+    <div style="display: inline-flex" class="center">
+      <h4><b>Threshold</b></h4>
+      <!--  THRESHOLD MIN SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>y min</mat-label>
+        <mat-slider formControlName="threshold_min" [max]="0.005" [min]="0" [step]="0.00001" [thumbLabel]="true"
+                    [value]="peakFindingSettings.threshold_min">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.threshold_min}}</b>
+      </div>
+
+      <!--  THRESHOLD MAX SLIDER  -->
+      <div style="margin-left: 20px">
+        <mat-label>y max</mat-label>
+        <mat-slider formControlName="threshold_max" [max]="0.1" [min]="0" [step]="0.001" [thumbLabel]="true"
+                    [value]="peakFindingSettings.threshold_max">
+        </mat-slider>
+        <b>{{peakFindingSettingsForm.value.threshold_max}}</b>
+      </div>
+    </div>
+
+<!--    TODO: adjust default settings; could add multiplier to min/max stuff based on whether it's normal or raw-->
+
+  </form>
+
+  <div style="display: inline-flex">
+    <button mat-raised-button (click)="resetSettings()" color="accent">Reset settings</button>
+
+  </div>
+
+
+
+</div>
+</div>

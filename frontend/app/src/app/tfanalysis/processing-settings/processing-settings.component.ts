@@ -43,10 +43,9 @@ export class ProcessingSettingsComponent implements OnInit {
   processingSettings?: TransitionProcessingSettings;
   processingSettingsForm?: any;
 
-  firstProcessingThisSession = true;
-
   // This should be taken from api based on definitions available in raw data table for the experiment
   dataTypesAvailable: string[] = [];
+
   interpolationMethodsAvailable: string[] = ['linear', 'quadratic', 'cubic', 'spline', 'polynomial'];
   dataToDeriveAvailable: string[] = ['normal', 'raw'];
   filterTypesAvailable: string[] = ['filtfilt', 'savgol'];
@@ -101,11 +100,13 @@ export class ProcessingSettingsComponent implements OnInit {
           y_label: new FormControl(this.processingSettings?.y_label),
 
         });
+        // TODO: take care with this
+        this.callDataProcessing();
       });
   }
 
   resetSettings(): void {
-    this.commonService.restTransitionProcessingSettings().subscribe( data => {
+    this.commonService.resetTransitionProcessingSettings().subscribe( data => {
       this.importProcessingSettings();
     });
   }

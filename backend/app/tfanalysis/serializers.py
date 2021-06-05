@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Experiment, SampleInfo, ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
-from .models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData
+#from .models import Experiment, , ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
+from .models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData, SampleInfo, PeakFindingSettings, PeakData
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
     """
@@ -36,17 +36,33 @@ class ExperimentsSerializer(DynamicFieldsModelSerializer):
         model = Experiments
         fields = '__all__'
 
+class SampleInfoSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = SampleInfo
+        fields = '__all__'
 
 class TransitionProcessingSettingsSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = TransitionProcessingSettings
         fields = '__all__'
 
-
 class ProcessedTransitionDataSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = ProcessedTransitionData
         fields = '__all__'
+
+
+
+class PeakFindingSettingsSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = PeakFindingSettings
+        fields = '__all__'
+
+class PeakDataSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = PeakData
+        fields = '__all__'
+
 
 
 #TODO do not write serializer for raw+processed data
@@ -61,39 +77,36 @@ class ProcessedTransitionDataSerializer(DynamicFieldsModelSerializer):
 
 
 #TODO: Move or remove stuff below
+#
+# class ProcessedDsfDataSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ProcessedDsfData
+#         fields = '__all__'
+#
+#
+# class ExperimentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Experiment
+#         fields = '__all__'
+#
+#
+#
 
-class ProcessedDsfDataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProcessedDsfData
-        fields = '__all__'
-
-
-class ExperimentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Experiment
-        fields = '__all__'
-
-
-
-class SampleInfoSerializer(DynamicFieldsModelSerializer):
-    class Meta:
-        model = SampleInfo
-        fields = '__all__'
-
-
-class ProcessingSettingsSerializer(DynamicFieldsModelSerializer):
-    class Meta:
-        model = ProcessingSettings
-        fields = '__all__'
-
-
-class ProcessedDataSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProcessedData
-        fields = '__all__'
-
-
-class DefaultProcessingSettingsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DefaultProcessingSettings
-        fields = '__all__'
+#
+#
+# class ProcessingSettingsSerializer(DynamicFieldsModelSerializer):
+#     class Meta:
+#         model = ProcessingSettings
+#         fields = '__all__'
+#
+#
+# class ProcessedDataSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ProcessedData
+#         fields = '__all__'
+#
+#
+# class DefaultProcessingSettingsSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = DefaultProcessingSettings
+#         fields = '__all__'

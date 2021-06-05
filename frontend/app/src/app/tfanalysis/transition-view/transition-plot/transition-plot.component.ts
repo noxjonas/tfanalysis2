@@ -1,47 +1,7 @@
 import {Component, OnInit, Input, OnChanges, SimpleChanges, NgZone, AfterViewInit, Inject, PLATFORM_ID, ViewChild, ElementRef} from '@angular/core';
 import {isPlatformBrowser} from '@angular/common';
-import {
-  ChartDataSets,
-  ChartType,
-  ChartOptions,
-  Scriptable,
-  PointStyle,
-  ChartColor,
-  PositionType,
-  ChartLegendLabelItem, ChartLegendLabelOptions
-} from 'chart.js';
-import { Label } from 'ng2-charts';
-import {CommonService, TransitionData} from '../../common.service';
+import {CommonService, PeakData, TransitionData} from '../../common.service';
 import {SampleInfo} from '../../sample-info/sample-info.component';
-
-// import * as uPlot from 'uplot'
-
-// import {Series} from "./uPlot";
-
-// import * as uPlot from "./uPlot"
-
-// import * as uPlot from 'uplot'
-
-
-// amCharts imports
-import * as am4core from '@amcharts/amcharts4/core';
-import * as am4charts from '@amcharts/amcharts4/charts';
-import am4themes_animated from '@amcharts/amcharts4/themes/animated';
-import {options} from '@amcharts/amcharts4/core';
-
-// import uPlot, { Series, Options } from 'uplot';
-
-import {UplotGenService} from './uplot-gen.service';
-
-// @ts-ignore
-import uPlot from 'uplot';
-// declare const uPlot: any;
-import {Options} from 'uplot';
-// import Options from "../../../../../node_modules/uplot/dist/uPlot"
-
-// @ts-ignore
-// import uPlot from 'uPlot';
-
 
 // https://github.com/plotly/angular-plotly.js/blob/master/README.md
 
@@ -68,15 +28,15 @@ interface xy {
   y: number;
 }
 
-class SeriesData {
-  constructor(
-    data: {
-      x: number;
-      y: number;
-    }[],
-    label: string,
-  ) {}
-}
+// class SeriesData {
+//   constructor(
+//     data: {
+//       x: number;
+//       y: number;
+//     }[],
+//     label: string,
+//   ) {}
+// }
 
 class DefaultColours {
   grey = ['#7f7f7f', '#a8a8a8', '#535353', '#939393', '#696969'];
@@ -121,6 +81,7 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   @Input() plotDataType!: string;
   @Input() filterPosArr!: string[];
   @Input() samples: SampleInfo[] = [];
+  @Input() peaks: PeakData[];
 
   @ViewChild('chartElement') chartElement: ElementRef<HTMLElement>;
 
@@ -158,8 +119,7 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   };
 
   constructor(@Inject(PLATFORM_ID) private platformId: any, private zone: NgZone,
-              private commonService: CommonService,
-              private chartBuilder: UplotGenService) {
+              private commonService: CommonService) {
     commonService.experimentSelected$.subscribe(data => this.clearChart());
   }
   // Run the function only in the browser
@@ -203,6 +163,11 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
       // i.e. remake the chart and colouring
 
     }
+
+    if (changes.peaks) {
+      this.drawPeaks();
+    }
+
   }
 
   // TODO: add selection whether to show raw data
@@ -231,7 +196,7 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
     };
     this.filterChartLegend(this.filterPosArr);
     this.applyColors();
-    //this.revision = 0;
+    // this.revision = 0;
 
   }
 
@@ -323,6 +288,10 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
 
     // an array should be returned in same order and length as sample info, since pos will be used to map colour
     //  to both scatter points and the v-lines
+  }
+
+  drawPeaks(): void {
+    console.log('peak data imported and is to be drawn', this.peaks);
   }
 
 }

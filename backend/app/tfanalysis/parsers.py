@@ -26,7 +26,7 @@ class DummyParser:
         Three settings must be specified:
             1. Registration settings. Each parser here is instantiated upon running Django, adding it to the database.
             2. Default transition processing settings as a dictionary.
-            3. Default peak processing settings as a dictionary.
+            3. Default peak finding settings as a dictionary.
             ! Use the same types (string, int, float, boolean) as in examples below!
             ! Do not remove or include any other keys in these dictionaries!
 
@@ -72,7 +72,7 @@ class DummyParser:
         'y_label': ''
     }
 
-    default_peak_processing_settings = {
+    default_peak_finding_settings = {
         'limit_x_min': 0,
         'limit_x_max': 100,
 
@@ -81,19 +81,19 @@ class DummyParser:
         'number_limit': 1,  # Max number of peaks returned. This is based on peak height
 
         # See scipy.signal.find_peaks
-        'prominence_min': 0.005,
-        'prominence_max': 1.0,
+        'prominence_min': 0.0001,
+        'prominence_max': 0.1,
         # Note that this takes distance in terms of data values. Processor auto adjusts to int based on interpolation indices.
         'distance': 5.0,
-        'height_min': 0.005,
-        'height_max': 1.0,
-        'width_min': 0.1,  # Currently not used but is mandatory. TODO: probably need to do the same as with distance?
-        'width_max': 80.0,  # Currently not used but is mandatory. TODO: probably need to do the same as with distance?
-        'threshold_min': 0.005,  # Currently not used but is mandatory.
-        'threshold_max': 1.0,  # Currently not used but is mandatory.
+        'height_min': 0.0002,
+        'height_max': 0.1,
+        'width_min': 0,  # Currently not used but is mandatory. TODO: probably need to do the same as with distance?
+        'width_max': 100,  # Currently not used but is mandatory. TODO: probably need to do the same as with distance?
+        'threshold_min': 0,  # Currently not used but is mandatory.
+        'threshold_max': 0.1,  # Currently not used but is mandatory.
 
-        'top_peak_logic': 'highest',  # One of: 'highest', 'smallest', 'leftmost', 'rightmost' or 'index'
-        'top_peak_logic_index': 0,  # Integer index. Used to index a list (i.e. starts at 0)
+        # 'top_peak_logic': 'highest',  # One of: 'highest', 'smallest', 'leftmost', 'rightmost' or 'index'
+        # 'top_peak_logic_index': 0,  # Integer index. Used to index a list (i.e. starts at 0)
     }
 
     def __init__(self, paths):

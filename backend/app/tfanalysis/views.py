@@ -1,11 +1,16 @@
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
-from .models import Experiment, RawData, SampleInfo, DefaultProcessingSettings, ProcessingSettings, ProcessedDsfData
-from .serializers import ExperimentSerializer, SampleInfoSerializer, ProcessingSettingsSerializer, ProcessedDsfDataSerializer
 
-from .models import Parsers, Experiments, InstrumentInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, DefaultPeakProcessingSettings, PeakProcessingSettings, ProcessedTransitionData
-from .serializers import ParsersSerializer, ExperimentsSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer
+# from .models import Experiment, DefaultProcessingSettings, ProcessingSettings, ProcessedDsfData
+# from .serializers import ExperimentSerializer, , ProcessingSettingsSerializer, ProcessedDsfDataSerializer
+
+from .parsers import *
+
+from .models import Parsers, Experiments, InstrumentInfo, RawData, SampleInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, ProcessedTransitionData, DefaultPeakFindingSettings, PeakFindingSettings, PeakData
+from .serializers import ParsersSerializer, ExperimentsSerializer, SampleInfoSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer, PeakFindingSettingsSerializer, PeakDataSerializer
+
+from .processors import TransitionProcessor, PeakFindingProcessor
 
 
 from django.core.files.storage import default_storage
@@ -15,12 +20,12 @@ import time
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .parsers import *
+
 from django.db import connections
 import io
 import datetime
 from django.utils import timezone
-from .processors import TransitionProcessor
+
 import pandas as pd
 import json
 import os
@@ -133,12 +138,12 @@ class UploadData(APIView):
         )
         new_transition_settings.save()
 
-        default_peak_settings = DefaultPeakProcessingSettings.objects.get(parser=parser)
-        default_peak_settings_dict = {k: v for k, v in default_peak_settings.__dict__.items() if k not in ['_state', 'id', 'parser_id']}
-        new_peak_settings = PeakProcessingSettings(
+        default_peak_finding_settings = DefaultPeakFindingSettings.objects.get(parser=parser)
+        default_peak_finding_settings_dict = {k: v for k, v in default_peak_finding_settings.__dict__.items() if k not in ['_state', 'id', 'parser_id']}
+        new_peak_settings = PeakFindingSettings(
             experiment=experiment,
-            default_settings=default_peak_settings,
-            **default_peak_settings_dict
+            default_settings=default_peak_finding_settings,
+            **default_peak_finding_settings_dict
         )
         new_peak_settings.save()
 
@@ -231,7 +236,7 @@ class UpdateTransitionProcessingSettings(APIView):
 
     def put(self, request):
         serializer = TransitionProcessingSettingsSerializer(data=request.data, ignore_fields=('id', 'experiment', 'default_settings'))
-        experiment = Experiments.objects.get(pk=request.data['id'])
+        experiment = Experiments.objects.get(pk=request.data['experiment'])
 
         if not serializer.is_valid():
             return Response({'update_status': 'fail'}, status=400)
@@ -375,81 +380,108 @@ class ProcessTransitionData(APIView):
 
 
 
-
-
-
-
-
-class _ProcessData(APIView):
+class FetchPeakFindingSettings(APIView):
 
     def post(self, request):
-        experiment_id = int(request.POST.get('experiment_id'))
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        settings = PeakFindingSettings.objects.get(experiment=experiment)
+        serialised = PeakFindingSettingsSerializer(settings)
 
-        # filter for data_type too; meaning first get processing settings
-        processing_settings = ProcessingSettings.objects.filter(experiment_id=experiment_id).values()[0]
-        raw_data_df = pd.DataFrame(list(RawData.objects.filter(
-            experiment_id=experiment_id,
-            data_type=processing_settings['selected_data_type'],
-        ).values()))
-        sample_info_df = pd.DataFrame(list(SampleInfo.objects.filter(experiment_id=experiment_id).values()))
+        return JsonResponse(serialised.data, safe=False, status=200)
 
-        processor = DsfProcessor(experiment_id, raw_data_df, sample_info_df, processing_settings)
-        df = processor.result_df.copy()
-        processor.__del__()
 
-        experiment_obj = Experiment.objects.get(id=experiment_id)
-        processing_settings_obj = ProcessingSettings.objects.get(id=processing_settings['id'])
+class UpdatePeakFindingSettings(APIView):
 
-        raw_data_objs = RawData.objects.filter(
-            experiment_id=experiment_id,
-            data_type=processing_settings['selected_data_type'],
+    def put(self, request):
+        serializer = PeakFindingSettingsSerializer(data=request.data, ignore_fields=('id', 'experiment', 'default_settings'))
+        experiment = Experiments.objects.get(pk=request.data['experiment'])
+
+        if not serializer.is_valid():
+            return Response({'update_status': 'fail'}, status=400)
+
+        settings = PeakFindingSettings.objects.get(experiment=experiment)
+
+        for key, value in serializer.data.items():
+            setattr(settings, key, value)
+        settings.save()
+
+        # Delete peak data if settings changed
+        if settings.has_changed:
+            peak_data = PeakData.objects.filter(experiment=experiment).all()
+            peak_data.delete()
+
+        return JsonResponse(serializer.data, status=200)
+
+
+class ResetPeakFindingSettings(APIView):
+
+    def post(self, request):
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        default_peak_finding_settings = DefaultPeakFindingSettings.objects.get(parser=experiment.parser)
+        default_peak_finding_settings_dict = {k: v for k, v in default_peak_finding_settings.__dict__.items() if k not in ['_state', 'id', 'parser_id', 'default_settings']}
+
+        settings = PeakFindingSettings.objects.get(experiment=experiment)
+
+        for key, value in default_peak_finding_settings_dict.items():
+            setattr(settings, key, value)
+        settings.save()
+
+        # Delete peak data if settings changed
+        if settings.has_changed:
+            peak_data = PeakData.objects.filter(experiment=experiment).all()
+            peak_data.delete()
+
+        return Response({'update_status': 'success'}, status=200)
+
+
+class FindPeaks(APIView):
+
+    def post(self, request):
+
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        processing_settings = PeakFindingSettings.objects.get(experiment=experiment)
+        transition_data = ProcessedTransitionData.objects.filter(
+            experiment=experiment
         )
+
+        # If data exists, means that the settings were not changed and therefore data is still valid
+        peak_data = PeakData.objects.filter(experiment=experiment).all()
+        if len(peak_data) > 0:
+            serializer = PeakDataSerializer(peak_data, many=True, ignore_fields=['id', 'experiment', 'processing_settings', 'transition_data'])
+            return JsonResponse(serializer.data, safe=False, status=200)
+
+        # Process the data otherwise
+        processor = PeakFindingProcessor(request.data['id'])
+        df = processor.result_df
 
         # This might not be needed since ordering is conserved
         # However, in light of being explicit over implicit - objects are explicitly mapped to pos
-        raw_data_obj_dict = {}
-        for i in raw_data_objs:
-            raw_data_obj_dict[i.pos] = i
+        transition_data_obj_dict = {}
+        for i in transition_data:
+            transition_data_obj_dict[i.pos] = i
 
+        obj_list = []
         for index, row in df.iterrows():
-            obj, created = ProcessedDsfData.objects.update_or_create(
+            obj, created = PeakData.objects.update_or_create(
                 # These ensure uniqueness
-                experiment=experiment_obj,
-                processing_info=processing_settings_obj,
-                raw_data=raw_data_obj_dict[row['pos']],
+                experiment=experiment,
+                processing_settings=processing_settings,
+                transition_data=transition_data_obj_dict[row['pos']],
                 pos=row['pos'],
 
                 # These are the values added, or changed if objects already exist
                 defaults={
-                    'scatter_raw_x': row['scatter_raw_x'],
-                    'scatter_raw_y': row['scatter_raw_y'],
-                    'scatter_regular_x': row['scatter_regular_x'],
-                    'scatter_regular_y': row['scatter_regular_y'],
-                    'scatter_normal_y': row['scatter_normal_y'],
-                    'scatter_smooth_y': row['scatter_smooth_y'],
-                    'scatter_first_der_y': row['scatter_first_der_y'],
-                    'all_peaks': row['all_peaks'],
-                    'top_peak': row['top_peak'],
+                    'x': row['x'],
+                    'y': row['y'],
+                    'index': row['index'],
                 },
             )
+            obj_list.append(obj.__dict__)
 
-        # Retrieve back the data and serialise
-        data = ProcessedDsfData.objects.filter(experiment_id=experiment_id).all()
-        serializer = ProcessedDsfDataSerializer(data, many=True)
-        return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+        # Serialise the data and send to front end
+        serializer = PeakDataSerializer(data=obj_list, many=True, ignore_fields=['id', 'experiment', 'processing_settings', 'transition_data'])
 
+        if serializer.is_valid():
+            return JsonResponse(serializer.data, safe=False, status=200)
+        return JsonResponse({'processing_status': 'fail'}, status=500)
 
-# class UpdateProcessingSettings(APIView):
-#
-#     def put(self, request):
-#         serializer = ProcessingSettingsSerializer(data=request.data, ignore_fields=['experiment'])
-#
-#         if not serializer.is_valid():
-#             print(repr(serializer), '\n\n', serializer.errors)
-#             return Response({'update_status': 'fail'}, status=status.HTTP_400_BAD_REQUEST)
-#
-#         ProcessingSettings.objects.filter(pk=serializer.data['id']).update(
-#             **serializer.data
-#         )
-#
-#         return Response({'update_status': 'success'}, status=status.HTTP_200_OK)

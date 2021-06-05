@@ -36,6 +36,7 @@ import { UploadErrorDialogComponent } from './tfanalysis/file-upload/upload-erro
 import { DeleteConfirmDialogComponent } from './tfanalysis/select-experiment/delete-confirm-dialog.component';
 import { DataPreviewComponent } from './tfanalysis/processing-settings/data-preview/data-preview.component';
 import { SampleSelectorComponent } from './tfanalysis/processing-settings/sample-selector/sample-selector.component';
+import { PeakFindingSettingsComponent } from './tfanalysis/transition-view/peak-finding-settings/peak-finding-settings.component';
 
 PlotlyModule.plotlyjs = PlotlyJS;
 
@@ -55,6 +56,7 @@ PlotlyModule.plotlyjs = PlotlyJS;
     DeleteConfirmDialogComponent,
     DataPreviewComponent,
     SampleSelectorComponent,
+    PeakFindingSettingsComponent,
   ],
   imports: [
     BrowserModule,

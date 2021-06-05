@@ -1,7 +1,6 @@
 import {Component, ElementRef, OnInit, ViewChild, AfterViewInit, Inject, PLATFORM_ID, NgZone} from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {CommonService} from './common.service';
-import {UplotGenService} from './transition-view/transition-plot/uplot-gen.service';
 
 @Component({
   selector: 'app-tfanalysis',
