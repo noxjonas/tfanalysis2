@@ -47,20 +47,6 @@ npm install echarts -S
 npm install ngx-echarts -S
 npm install resize-observer-polyfill -D
 
-npm install @amcharts/amcharts4
-
-
-npm install --save chart.js && npm install --save-dev @types/chart.js
-
-npm install --save ng2-charts
-
-npm install chart.js@2.9.3 --save
-npm install ng2-charts@2.2.3 --save
-
-npm install ngx-drag-to-select
-
-npm install uplot --save
-
 
 ng g directive tfanalysis/file-upload/file-upload --skipTests=true --flat=true
 
