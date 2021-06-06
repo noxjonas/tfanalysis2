@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import {Component, OnInit, AfterViewInit, OnChanges, SimpleChanges, Input} from '@angular/core';
 import {TransitionProcessingSettings} from '../../processing-settings/processing-settings.component';
 import {CommonService} from '../../common.service';
 import {FormControl, FormGroup} from '@angular/forms';
@@ -33,69 +33,55 @@ export interface PeakFindingSettings {
   templateUrl: './peak-finding-settings.component.html',
   styleUrls: ['./peak-finding-settings.component.css']
 })
-export class PeakFindingSettingsComponent implements OnInit {
-  peakFindingSettings?: PeakFindingSettings;
-  peakFindingSettingsForm?: any;
+export class PeakFindingSettingsComponent implements OnInit, OnChanges {
+  @Input() peakFindingSettings?: PeakFindingSettings;
+
+  peakFindingSettingsForm?: FormGroup;
 
   peakModesAvailable: string[] = ['positive', 'negative', 'both'];
 
-  constructor(private commonService: CommonService) {
-    commonService.transitionsProcessed$.subscribe(experiment => this.ngOnInit());
-  }
+  constructor(private commonService: CommonService) {}
 
-  ngOnInit(): void {
-    this.importPeakFindingSettings();
-  }
+  ngOnInit(): void {}
 
-  importPeakFindingSettings(): void {
-    this.commonService.fetchPeakFindingSettings()
-      .subscribe(data => {
-        console.log('this is the peak finding data', data);
-        this.peakFindingSettings = data;
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.peakFindingSettings && this.peakFindingSettings) {
+      this.peakFindingSettingsForm = new FormGroup({
+        id: new FormControl(this.peakFindingSettings?.id),
+        experiment: new FormControl(this.peakFindingSettings?.experiment),
+        default_settings: new FormControl(this.peakFindingSettings?.default_settings),
+        updated: new FormControl(this.peakFindingSettings?.updated),
 
-        this.peakFindingSettingsForm = new FormGroup({
-          id: new FormControl(this.peakFindingSettings?.id),
-          experiment: new FormControl(this.peakFindingSettings?.experiment),
-          default_settings: new FormControl(this.peakFindingSettings?.default_settings),
-          updated: new FormControl(this.peakFindingSettings?.updated),
+        limit_x_min: new FormControl(this.peakFindingSettings?.limit_x_min),
+        limit_x_max: new FormControl(this.peakFindingSettings?.limit_x_max),
 
-          limit_x_min: new FormControl(this.peakFindingSettings?.limit_x_min),
-          limit_x_max: new FormControl(this.peakFindingSettings?.limit_x_max),
+        peak_mode: new FormControl(this.peakFindingSettings?.peak_mode),
 
-          peak_mode: new FormControl(this.peakFindingSettings?.peak_mode),
+        number_limit: new FormControl(this.peakFindingSettings?.number_limit),
 
-          number_limit: new FormControl(this.peakFindingSettings?.number_limit),
-
-          prominence_min: new FormControl(this.peakFindingSettings?.prominence_min),
-          prominence_max: new FormControl(this.peakFindingSettings?.prominence_max),
-          distance: new FormControl(this.peakFindingSettings?.distance),
-          height_min: new FormControl(this.peakFindingSettings?.height_min),
-          height_max: new FormControl(this.peakFindingSettings?.height_max),
-          width_min: new FormControl(this.peakFindingSettings?.width_min),
-          width_max: new FormControl(this.peakFindingSettings?.width_max),
-          threshold_min: new FormControl(this.peakFindingSettings?.threshold_min),
-          threshold_max: new FormControl(this.peakFindingSettings?.threshold_max),
-        });
-        // TODO: Take care with this
-        this.callPeakFinding();
+        prominence_min: new FormControl(this.peakFindingSettings?.prominence_min),
+        prominence_max: new FormControl(this.peakFindingSettings?.prominence_max),
+        distance: new FormControl(this.peakFindingSettings?.distance),
+        height_min: new FormControl(this.peakFindingSettings?.height_min),
+        height_max: new FormControl(this.peakFindingSettings?.height_max),
+        width_min: new FormControl(this.peakFindingSettings?.width_min),
+        width_max: new FormControl(this.peakFindingSettings?.width_max),
+        threshold_min: new FormControl(this.peakFindingSettings?.threshold_min),
+        threshold_max: new FormControl(this.peakFindingSettings?.threshold_max),
       });
+      this.commonService.peakFindingSettingsForm = this.peakFindingSettingsForm;
+      this.peakFindingSettingsForm.valueChanges.subscribe(_ => {
+        this.commonService.peakFindingSettingsForm = this.peakFindingSettingsForm;
+      });
+    }
   }
 
   resetSettings(): void {
-    this.commonService.resetPeakFindingSettings().subscribe(data => {
-      this.importPeakFindingSettings();
-    });
+    this.commonService.resetPeakFindingSettings();
   }
 
-
   callPeakFinding(): void {
-    console.log('finding peaks...');
-    // first update the settings
-    this.commonService.updatePeakFindingSettings(this.peakFindingSettingsForm.getRawValue()).subscribe( data => {
-      this.commonService.fetchPeakData();
-    }, error => {
-      console.log('Failed while uploading settings to the backend');
-    });
+    this.commonService.fetchPeakData();
   }
 
 }

@@ -328,6 +328,10 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   drawPeaks(): void {
     console.log('peak data imported and is to be drawn', this.peaks, this.seriesColours);
 
+    if (!this.peaks) {
+      return;
+    }
+
     // Clear previous peaks
     this.graph.layout.shapes = [];
 

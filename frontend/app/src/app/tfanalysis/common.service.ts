@@ -6,8 +6,10 @@ import {environment} from '../../environments/environment';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {SampleInfo} from './sample-info/sample-info.component';
 import {sample} from 'rxjs/operators';
-import {FormGroup} from '@angular/forms';
-import {PeakFindingSettings} from './transition-view/peak-finding-settings/peak-finding-settings.component';
+import {Form, FormGroup} from '@angular/forms';
+import {PeakFindingSettings, PeakFindingSettingsComponent} from './transition-view/peak-finding-settings/peak-finding-settings.component';
+import {MatDialog} from '@angular/material/dialog';
+import {StandardErrorDialogComponent} from './error-dialogs/standard-error-dialog/standard-error-dialog.component';
 
 
 export interface Parsers {
@@ -71,24 +73,39 @@ export interface PeakData {
   providedIn: 'root'
 })
 export class CommonService {
-  public parsersReceived$: EventEmitter<boolean>;
-  public experimentSelected$: EventEmitter<Experiment>;
+  public parsers: Parsers[];
+  public dataImportSuccess$: EventEmitter<boolean>;
+
   public experiments: Experiment[];
-  public selected!: Experiment;
+  public selectedExperiment: Experiment;
+  public experimentSelected$: EventEmitter<Experiment>;
+
+  public sampleInfo: SampleInfo[];
+  public sampleInfoChanged$: EventEmitter<SampleInfo[]>;
+
+  public transitionProcessingSettingsForm: FormGroup;
+  public transitionProcessingSettings: TransitionProcessingSettings;
+  public transitionPreviewData: TransitionData[];
+
+
   public transitionsProcessingStarted$: EventEmitter<boolean>;
   public transitionsProcessed$: EventEmitter<boolean>;
   public transitionData!: TransitionData[];
-  public sampleInfoChanged$: EventEmitter<SampleInfo[]>;
-  public sampleInfoData!: SampleInfo[];
-  public parsers!: Parsers[];
-  public transitionProcessingSettings: TransitionProcessingSettings;
+
 
   public peakData!: PeakData[];
+  public peakFindingSettingsForm: FormGroup;
+  public peakFindingSettings: PeakFindingSettings;
+
   public peakFindingStarted$: EventEmitter<boolean>;
   public peakFindingComplete$: EventEmitter<boolean>;
 
-  constructor(private http: HttpClient) {
-    this.parsersReceived$ = new EventEmitter();
+
+  constructor(
+    private http: HttpClient,
+    public standardErrorDialog: MatDialog,
+  ) {
+    this.dataImportSuccess$ = new EventEmitter();
     this.experimentSelected$ = new EventEmitter();
     this.transitionsProcessingStarted$ = new EventEmitter();
     this.transitionsProcessed$ = new EventEmitter();
@@ -104,131 +121,268 @@ export class CommonService {
     })
   };
 
-  private _fetchParsers(): Observable<any> {
-    return this.http.get<Parsers[]>(environment.baseApiUrl + 'tfanalysis/fetchparsers/');
+  displayErrorDialog(_CALLER: string, _ERROR: any, _WIDTH?: string): void {
+    const dialogRef = this.standardErrorDialog.open(StandardErrorDialogComponent, {
+      data: {caller: _CALLER, errorContent: _ERROR},
+      width: _WIDTH ? _WIDTH : '800px',
+    });
+    dialogRef.afterClosed().subscribe(result => {
+    });
   }
 
-  public fetchParsers(): void {
-    this._fetchParsers().subscribe(
+  fetchParsers(): void {
+    this.http.get<Parsers[]>(environment.baseApiUrl + 'tfanalysis/fetchparsers/').subscribe(
       data => {
         this.parsers = data;
-        this.parsersReceived$.emit(null);
-        return;
-      }
-    );
-  }
-
-  fetchExperiments(): Observable<Experiment[]> {
-    return this.http.post<Experiment[]>(environment.baseApiUrl + 'tfanalysis/fetchexperiments/', null);
-  }
-
-  public selectExperiment(experiment: any): Experiment {
-    // TODO: experiment is not selected after uploading? something wrong with delete
-    // TODO: actually, it appears that update of settings is called while the data is from the old experiment; still only happens after delete
-    // TODO: can I just reinit all of the processing components after experiment is changed? or DELETED
-    // TODO: this appears to be fixed, but on the first run automatic processing does not work? because views aren't initialized?
-    console.log('this is the experiment being selected', experiment);
-    this.selected = experiment;
-    this.experimentSelected$.emit(experiment);
-    return this.selected;
-  }
-
-  public getSelectedExperiment(): Experiment {
-    return this.selected;
-  }
-
-  updateExperimentInfo(formGroupRaw: string): Observable<any> {
-    const httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    return this.http.put<any>(environment.baseApiUrl + 'tfanalysis/updateexperimentinfo/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
-  }
-
-  deleteExperiment(experimentId: number): Observable<any> {
-    return this.http.post<any>(environment.baseApiUrl + 'tfanalysis/deleteexperiment/', JSON.stringify({id: experimentId}), this.jsonHttpOptions);
-  }
-
-  private _fetchSampleInfo(): Observable<any> {
-    const selectedExperiment = this.getSelectedExperiment();
-    const formData = new FormData();
-    formData.append('experiment_id', String(selectedExperiment.id));
-    return this.http.post<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/fetchsampleinfo/', formData);
-  }
-  public fetchSampleInfo(): void {
-    this._fetchSampleInfo()
-      .subscribe(data => {
-        this.sampleInfoData = data;
-        this.sampleInfoChanged$.emit(data);
+      }, error => {
+        this.displayErrorDialog('', error);
       });
   }
-  public postSampleInfo(sampleInfo: any): Observable<any> {
-    this.sampleInfoChanged$.emit(sampleInfo);
-    this.sampleInfoData = sampleInfo;
-    return this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/', JSON.stringify(sampleInfo), this.jsonHttpOptions);
+
+  uploadDataFiles(fileUploadForm: FormGroup): void {
+    const formData = new FormData();
+    for (const control of Object.keys(fileUploadForm.controls)) {
+      if (control === 'files') {
+        for (const file of fileUploadForm.value[control]) {
+          formData.append(control, file, file.name);
+        }
+      } else {
+        formData.append(control, fileUploadForm.value[control]);
+      }
+    }
+    this.http.post<Experiment>(environment.baseApiUrl + 'tfanalysis/uploaddata/', formData).subscribe(experiment => {
+      this.http.post<Experiment[]>(environment.baseApiUrl + 'tfanalysis/fetchexperiments/', null).subscribe(experiments => {
+        this.experiments = experiments;
+        this.selectExperiment(experiment);
+        this.dataImportSuccess$.emit(true);
+      }, error => {
+        this.displayErrorDialog('', error);
+      });
+    }, error => {
+      this.displayErrorDialog('uploaddata', error);
+    });
   }
 
-  fetchTransitionProcessingSettings(): Observable<TransitionProcessingSettings> {
-    return this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/fetchtransitionprocessingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  }
-  updateTransitionProcessingSettings(formGroupRaw: string): Observable<any> {
-    return this.http.put<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/updatetransitionprocessingsettings/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
-  }
-  resetTransitionProcessingSettings(): Observable<any> {
-    return this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/resettransitionprocessingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  fetchExperiments(): void {
+    this.http.post<Experiment[]>(environment.baseApiUrl + 'tfanalysis/fetchexperiments/', null).subscribe(experiments => {
+      this.experiments = experiments;
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
   }
 
-  postPreviewTransitionProcessing(filterPos: string[]): Observable<TransitionData[]> {
-    return this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/previewtransitionprocessing/', JSON.stringify({id: this.selected.id, filter: filterPos}), this.jsonHttpOptions);
+  selectExperiment(experiment: Experiment): void {
+    console.log('this is the experiment being selected', experiment);
+    this.selectedExperiment = experiment;
+    this.experimentSelected$.emit(experiment);
+
+    // TODO: this is how auto-loading is implemented then?
+    this.fetchSampleInfo();
+    this.fetchTransitionProcessingSettings();
+    this.fetchPeakFindingSettings();
   }
 
+  updateExperimentInfo(formGroupRaw: string): void {
+    this.http.put<any>(
+      environment.baseApiUrl + 'tfanalysis/updateexperimentinfo/',
+      JSON.stringify(formGroupRaw),
+      this.jsonHttpOptions).subscribe(experiment => {
+        this.selectedExperiment = experiment;
+        this.fetchExperiments();
+      }, error => {
+          this.displayErrorDialog('', error);
+        });
+  }
 
-  private postProcessTransitionData(): Observable<TransitionData[]> {
+  deleteExperiment(experiment: Experiment): void {
+    this.http.post<any>(environment.baseApiUrl + 'tfanalysis/deleteexperiment/',
+      JSON.stringify({id: experiment.id}),
+      this.jsonHttpOptions).subscribe(data => {
+        this.selectedExperiment = null;
+        this.fetchExperiments();
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  fetchSampleInfo(): void {
+    this.http.post<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/fetchsampleinfo/',
+      JSON.stringify({id: this.selectedExperiment.id}),
+      this.jsonHttpOptions).subscribe(sampleInfo => {
+        this.sampleInfo = sampleInfo;
+        // TODO: get rid of this?
+        this.sampleInfoChanged$.emit(sampleInfo);
+      }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  public updateSampleInfo(newSampleInfo: any): void {
+    this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/',
+      JSON.stringify(newSampleInfo),
+      this.jsonHttpOptions).subscribe( sampleInfo => {
+        this.sampleInfoChanged$.emit(sampleInfo);
+        this.sampleInfo = sampleInfo;
+      }, error => {
+        this.displayErrorDialog('', error);
+      });
+  }
+
+  fetchTransitionProcessingSettings(): void {
+    this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/fetchtransitionprocessingsettings/',
+      JSON.stringify({id: this.selectedExperiment.id}),
+      this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
+        this.transitionProcessingSettings = transitionProcessingSettings;
+        // TODO: Auto-process
+        this.fetchProcessedTransitionData();
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  updateTransitionProcessingSettings(): void {
+    this.http.put<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/updatetransitionprocessingsettings/',
+      JSON.stringify(this.transitionProcessingSettingsForm.getRawValue()),
+      this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
+        this.transitionProcessingSettings = transitionProcessingSettings;
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  resetTransitionProcessingSettings(): void {
+    this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/resettransitionprocessingsettings/',
+      JSON.stringify({id: this.selectedExperiment.id}),
+      this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
+      this.transitionProcessingSettings = transitionProcessingSettings;
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  postPreviewTransitionProcessing(filterPos: string[]): void {
+    this.http.put<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/updatetransitionprocessingsettings/',
+      JSON.stringify(this.transitionProcessingSettingsForm.getRawValue()),
+      this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
+        this.transitionProcessingSettings = transitionProcessingSettings;
+        this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/previewtransitionprocessing/',
+          JSON.stringify({id: this.selectedExperiment.id, filter: filterPos}),
+          this.jsonHttpOptions).subscribe(transitionPreviewData => {
+            this.transitionPreviewData = transitionPreviewData;
+        }, error => {
+          this.displayErrorDialog('', error);
+      });
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  fetchProcessedTransitionData(): void {
     this.transitionsProcessingStarted$.emit(true);
-    return this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/processtransitiondata/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  }
-
-  public fetchProcessedTransitionData(): void {
-    this.postProcessTransitionData().subscribe(
-      data => {
-        this.transitionData = data;
+    this.http.put<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/updatetransitionprocessingsettings/',
+      JSON.stringify(this.transitionProcessingSettingsForm.getRawValue()),
+      this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
+      this.transitionProcessingSettings = transitionProcessingSettings;
+      this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/processtransitiondata/',
+        JSON.stringify({id: this.selectedExperiment.id}),
+        this.jsonHttpOptions).subscribe(transitionData => {
+        this.transitionData = transitionData;
         this.transitionsProcessed$.emit(true);
+        // TODO: Auto-process
+        this.fetchPeakData();
       }, error => {
-        // TODO: implement error dialog
-        console.log('Processing of all transitions failed');
         this.transitionsProcessed$.emit(true);
-      }
-    );
+        this.displayErrorDialog('', error);
+      });
+    }, error => {
+      this.transitionsProcessed$.emit(true);
+      this.displayErrorDialog('', error);
+    });
   }
 
-  fetchPeakFindingSettings(): Observable<PeakFindingSettings> {
-    return this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/fetchpeakfindingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  }
-  updatePeakFindingSettings(formGroupRaw: string): Observable<any> {
-    return this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
-  }
-  resetPeakFindingSettings(): Observable<any> {
-    return this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/resetpeakfindingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  fetchPeakFindingSettings(): void {
+    this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/fetchpeakfindingsettings/',
+      JSON.stringify({id: this.selectedExperiment.id}),
+      this.jsonHttpOptions).subscribe(peakFindingSettings => {
+      this.peakFindingSettings = peakFindingSettings;
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
   }
 
-  private postFindPeaks(): Observable<PeakData[]> {
+  updatePeakFindingSettings(): void {
+    this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/',
+      JSON.stringify(this.peakFindingSettingsForm.getRawValue()),
+      this.jsonHttpOptions).subscribe(peakFindingSettings => {
+      this.peakFindingSettings = peakFindingSettings;
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  resetPeakFindingSettings(): void {
+    this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/resetpeakfindingsettings/',
+      JSON.stringify({id: this.selectedExperiment.id}),
+      this.jsonHttpOptions).subscribe(peakFindingSettings => {
+      this.peakFindingSettings = peakFindingSettings;
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
+
+  fetchPeakData(): void {
     this.peakFindingStarted$.emit(true);
-    return this.http.post<PeakData[]>(environment.baseApiUrl + 'tfanalysis/findpeaks/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  }
-
-  public fetchPeakData(): void {
-    this.postFindPeaks().subscribe(
-      data => {
-        this.peakData = data;
+    this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/',
+      JSON.stringify(this.peakFindingSettingsForm.getRawValue()),
+      this.jsonHttpOptions).subscribe(peakFindingSettings => {
+      this.peakFindingSettings = peakFindingSettings;
+      this.http.post<PeakData[]>(environment.baseApiUrl + 'tfanalysis/findpeaks/',
+        JSON.stringify({id: this.selectedExperiment.id}),
+        this.jsonHttpOptions).subscribe(peakData => {
+        this.peakData = peakData;
         this.peakFindingComplete$.emit(true);
       }, error => {
-        // TODO: implement error dialog
-        console.log('Peak finding failed');
         this.peakFindingComplete$.emit(true);
-      }
-    );
+        this.displayErrorDialog('', error);
+      });
+    }, error => {
+      this.peakFindingComplete$.emit(true);
+      this.displayErrorDialog('', error);
+    });
   }
+
+
+
+
+
+  //
+  // fetchPeakFindingSettings(): Observable<PeakFindingSettings> {
+  //   return this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/fetchpeakfindingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  // }
+  // updatePeakFindingSettings(formGroupRaw: string): Observable<any> {
+  //   return this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
+  // }
+  // resetPeakFindingSettings(): Observable<any> {
+  //   return this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/resetpeakfindingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  // }
+
+  // private postFindPeaks(): Observable<PeakData[]> {
+  //   this.peakFindingStarted$.emit(true);
+  //   return this.http.post<PeakData[]>(environment.baseApiUrl + 'tfanalysis/findpeaks/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
+  // }
+  //
+  // fetchPeakData(): void {
+  //   this.postFindPeaks().subscribe(
+  //     data => {
+  //       this.peakData = data;
+  //       this.peakFindingComplete$.emit(true);
+  //     }, error => {
+  //       // TODO: implement error dialog
+  //       console.log('Peak finding failed');
+  //       this.peakFindingComplete$.emit(true);
+  //     }
+  //   );
+  // }
 
 
 

@@ -64,4 +64,4 @@ npm install uplot --save
 
 ng g directive tfanalysis/file-upload/file-upload --skipTests=true --flat=true
 
-ng g c tfanalysis/transition-view/peak-finding-settings --skipTests=true
+ng g c tfanalysis/error-dialogs/standard-error-dialog --skipTests=true

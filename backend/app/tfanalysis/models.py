@@ -101,6 +101,7 @@ class Experiments(models.Model):
     screen = models.TextField(blank=True)
     instrument_info = models.JSONField(blank=True)
     parse_warnings = models.JSONField(blank=True)
+    # TODO: model for autoprocessing?
 
     class Meta:
         db_table = 'experiments'

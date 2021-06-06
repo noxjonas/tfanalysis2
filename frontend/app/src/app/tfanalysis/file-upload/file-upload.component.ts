@@ -1,26 +1,19 @@
-import {Component, OnInit, Output, ViewChild} from '@angular/core';
-import { FileUploadService } from './file-upload.service';
+import {Component, Input, OnInit, Output, ViewChild, OnChanges, SimpleChanges} from '@angular/core';
 import {FormGroup, FormControl, FormGroupDirective} from '@angular/forms';
 import { Parsers } from '../common.service';
 import { CommonService } from '../common.service';
 import { Validators } from '@angular/forms';
-import { MatDialog} from '@angular/material/dialog';
-import { UploadErrorDialogComponent } from './upload-error-dialog.component';
 import { EventEmitter } from '@angular/core';
-import Handsontable from 'handsontable';
-import validators = Handsontable.validators;
 
 @Component({
   selector: 'app-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.css']
 })
-export class FileUploadComponent implements OnInit {
+export class FileUploadComponent implements OnInit, OnChanges {
 
-  @Output() rawUploadInProgress$ = new EventEmitter<boolean>();
-  @Output() rawUploadSuccess$ = new EventEmitter<boolean>();
+  @Input() parsers: Parsers[];
 
-  parsers: Parsers[];
   selectedParser: Parsers;
   files: File[] = [];
   extensionWarning: boolean;
@@ -30,20 +23,11 @@ export class FileUploadComponent implements OnInit {
     name: new FormControl('', [Validators.required]),
     user: new FormControl(''),
     notes: new FormControl(''),
-    files: new FormControl(''),
+    files: new FormControl([]),
     project: new FormControl(''),
   });
 
-  constructor(
-    private fileUploadService: FileUploadService,
-    private commonService: CommonService,
-    public uploadErrorDialog: MatDialog
-  ) {
-    this.commonService.parsersReceived$.subscribe( data => {
-        this.parsers = commonService.parsers;
-        this.fileUploadForm.get('parser').setValue(this.parsers.slice(-1)[0].python_class_name);
-    });
-  }
+  constructor(private commonService: CommonService) {}
 
   ngOnInit(): void {
     this.commonService.fetchParsers();
@@ -52,6 +36,15 @@ export class FileUploadComponent implements OnInit {
         this.selectedParser = this.parsers.find(i => i.python_class_name === formValue);
         this.checkExtensions();
       });
+    this.commonService.dataImportSuccess$.subscribe(_ => {
+      this.resetUploadForm();
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (this.parsers && changes.parsers) {
+      this.fileUploadForm.get('parser').setValue(this.parsers.slice(-1)[0].python_class_name);
+    }
   }
 
   onFileDropped(event: any): void {
@@ -98,18 +91,10 @@ export class FileUploadComponent implements OnInit {
     if (this.files.length < 1 || !this.fileUploadForm.valid) {
       return;
     }
-    this.rawUploadInProgress$.emit(true);
-    this.fileUploadService.uploadRawFiles(this.files, this.fileUploadForm)
-          .subscribe(data => {
-            this.resetUploadForm();
-            this.rawUploadInProgress$.emit(false);
-            this.commonService.selectExperiment(data);
-            this.rawUploadSuccess$.emit(true);
-          },
-                    error => {
-            this.rawUploadInProgress$.emit(false);
-            this.openDialog(error.error);
-          });
+    // this.rawUploadInProgress$.emit(true);
+    this.fileUploadForm.get('files').setValue(this.files);
+    this.commonService.uploadDataFiles(this.fileUploadForm);
+    // TODO: RESET FORM ON SUCCESSFUL UPLOAD
   }
 
   resetUploadForm(): void {
@@ -120,14 +105,6 @@ export class FileUploadComponent implements OnInit {
     // None of the abstract control methods to clear the required validator on 'name' work
     // If it's still annoying in the future, look again: https://stackoverflow.com/questions/43759590/angular-reactive-forms-how-to-reset-form-state-and-keep-values-after-submit
     this.files = [];
-  }
-
-  openDialog(error: any): void {
-    const dialogRef = this.uploadErrorDialog.open(UploadErrorDialogComponent, {
-      data: error
-    });
-    dialogRef.afterClosed().subscribe(result => {
-    });
   }
 
 }

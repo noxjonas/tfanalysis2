@@ -14,15 +14,17 @@ export class TfanalysisComponent implements AfterViewInit {
 
   experimentSelected: boolean;
 
-  constructor(private commonService: CommonService) {
-    commonService.transitionsProcessingStarted$.subscribe(data => (this.loading = true));
-    commonService.transitionsProcessed$.subscribe(data => {
+  constructor(public commonService: CommonService) {
+    commonService.dataImportSuccess$.subscribe(_ => {this.selectedTab.setValue(3); });
+
+    commonService.transitionsProcessingStarted$.subscribe(_ => (this.loading = true));
+    commonService.transitionsProcessed$.subscribe(_ => {
       this.selectedTab.setValue(5);
       this.loading = false;
     });
 
-    commonService.peakFindingStarted$.subscribe(data => (this.loading = true));
-    commonService.peakFindingComplete$.subscribe(data => (this.loading = false));
+    commonService.peakFindingStarted$.subscribe(_ => (this.loading = true));
+    commonService.peakFindingComplete$.subscribe(_ => (this.loading = false));
 
     commonService.experimentSelected$.subscribe(data => {
       this.experimentSelected = data !== null;

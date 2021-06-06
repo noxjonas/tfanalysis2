@@ -35,8 +35,8 @@ export class SampleSelectorComponent implements OnChanges {
 
   constructor() {
     this.filteredPositions = this.positionCtrl.valueChanges.pipe(
-      // startWith(null),
-      map((position: string | null) => position ? this._filter(position) : this.allPositions.slice()));
+      map((position: string | null) => position ? this._filter(position) : this.allPositions.slice())
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -45,7 +45,6 @@ export class SampleSelectorComponent implements OnChanges {
       this.allPositions = this.sampleInfo.map(x => x.pos);
     }
   }
-
 
   add(event: MatChipInputEvent): void {
     // Add position only when MatAutocomplete is not open
@@ -64,8 +63,6 @@ export class SampleSelectorComponent implements OnChanges {
         input.value = '';
       }
 
-      // TODO: emit filter change event
-      console.log('I am emitting stuff');
       this.filterPos.emit(this.positions);
 
       this.positionCtrl.setValue(null);
@@ -95,22 +92,16 @@ export class SampleSelectorComponent implements OnChanges {
   }
 
   randomThree(): void {
-    // remove currently selected
-    //this.positions = [];
-
-    const pickRandom = (arr: string[], count: number) => {
-      const _arr = [...arr];
-      return[...Array(count)].map( () => _arr.splice(Math.floor(Math.random() * _arr.length), 1)[0] );
+    const pickRandom = (ARRAY: string[], count: number) => {
+      const arr = [...ARRAY];
+      return[...Array(count)].map( () => arr.splice(Math.floor(Math.random() * arr.length), 1)[0]);
     };
-
-    console.log('these are all positions', this.allPositions);
 
     if (this.allPositions.length > 2) {
       this.positions = pickRandom(this.allPositions, 3);
     } else {
       this.positions = pickRandom(this.allPositions, this.allPositions.length);
     }
-
 
     this.filterPos.emit(this.positions);
   }

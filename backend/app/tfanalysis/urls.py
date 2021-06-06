@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     path('tfanalysis/fetchparsers/', views.FetchParsers.as_view()),
-    path('tfanalysis/upload/', views.UploadData.as_view()),
+    path('tfanalysis/uploaddata/', views.UploadData.as_view()),
     path('tfanalysis/fetchexperiments/', views.FetchExperiments.as_view()),
     path('tfanalysis/updateexperimentinfo/', views.UpdateExperimentInfo.as_view()),
     path('tfanalysis/deleteexperiment/', views.DeleteExperiment.as_view()),

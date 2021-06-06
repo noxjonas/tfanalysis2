@@ -1,4 +1,4 @@
-<div  *ngIf="processingSettings" class="row" style="margin-bottom: 200px">
+<div  *ngIf="transitionProcessingSettings" class="row" style="margin-bottom: 200px">
   <div class="column" style="max-width: 45%">
 
     <form [formGroup]="processingSettingsForm" >
@@ -43,7 +43,7 @@
         <div style="margin-left: 20px">
           <mat-label>Period (data points)</mat-label>
           <mat-slider formControlName="derivative_period" [max]="20" [min]="1" [step]="1" [thumbLabel]="true"
-                      [value]="processingSettings.derivative_period">
+                      [value]="transitionProcessingSettings.derivative_period">
           </mat-slider>
           <b>{{processingSettingsForm.value.derivative_period}}</b>
         </div>
@@ -58,7 +58,7 @@
         <div>
           <mat-label>x min</mat-label>
           <mat-slider formControlName="truncate_x_min" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
-            [value]="processingSettings.truncate_x_min">
+            [value]="transitionProcessingSettings.truncate_x_min">
           </mat-slider>
           <b>{{processingSettingsForm.value.truncate_x_min}}</b>
         </div>
@@ -67,7 +67,7 @@
         <div style="margin-left: 20px">
           <mat-label>x max</mat-label>
           <mat-slider formControlName="truncate_x_max" [max]="100" [min]="0" [step]="1" [thumbLabel]="true"
-                      [value]="processingSettings.truncate_x_max">
+                      [value]="transitionProcessingSettings.truncate_x_max">
           </mat-slider>
           <b>{{processingSettingsForm.value.truncate_x_max}}</b>
         </div>
@@ -80,7 +80,7 @@
         <div>
           <mat-label>Indices</mat-label>
           <mat-slider formControlName="interpolation_indices" [max]="1" [min]="0.01" [step]="0.01" [thumbLabel]="true"
-                      [value]="processingSettings.interpolation_indices">
+                      [value]="transitionProcessingSettings.interpolation_indices">
           </mat-slider>
           <b>{{processingSettingsForm.value.interpolation_indices}}</b>
         </div>
@@ -101,7 +101,7 @@
         <div *ngIf="'spline' == processingSettingsForm.value.interpolation_method" style="margin-left: 20px">
           <mat-label>Order</mat-label>
           <mat-slider formControlName="interpolation_order" [max]="5" [min]="1" [step]="1" [thumbLabel]="true"
-                      [value]="processingSettings.interpolation_order">
+                      [value]="transitionProcessingSettings.interpolation_order">
           </mat-slider>
           <b>{{processingSettingsForm.value.interpolation_order}}</b>
         </div>
@@ -110,7 +110,7 @@
         <div *ngIf="'polynomial' == processingSettingsForm.value.interpolation_method" style="margin-left: 20px">
           <mat-label>Order</mat-label>
           <mat-slider formControlName="interpolation_order" [max]="9" [min]="1" [step]="2" [thumbLabel]="true"
-                      [value]="processingSettings.interpolation_order">
+                      [value]="transitionProcessingSettings.interpolation_order">
           </mat-slider>
           <b>{{processingSettingsForm.value.interpolation_order}}</b>
         </div>
@@ -135,7 +135,7 @@
         <div *ngIf="'filtfilt' == processingSettingsForm.value.filter_type" style="margin-left: 20px">
           <mat-label>Butterworth filter N</mat-label>
           <mat-slider formControlName="filtfilt_n" [max]="10" [min]="1" [step]="1" [thumbLabel]="true"
-                      [value]="processingSettings.filtfilt_n">
+                      [value]="transitionProcessingSettings.filtfilt_n">
           </mat-slider>
           <b>{{processingSettingsForm.value.filtfilt_n}}</b>
         </div>
@@ -144,7 +144,7 @@
         <div *ngIf="'filtfilt' == processingSettingsForm.value.filter_type" style="margin-left: 20px">
           <mat-label>Butterworth filter Wn</mat-label>
           <mat-slider formControlName="filtfilt_wn" [max]="1" [min]="0.005" [step]="0.005" [thumbLabel]="true"
-                      [value]="processingSettings.filtfilt_wn">
+                      [value]="transitionProcessingSettings.filtfilt_wn">
           </mat-slider>
           <b>{{processingSettingsForm.value.filtfilt_wn}}</b>
         </div>
@@ -153,7 +153,7 @@
         <div  *ngIf="'savgol' == processingSettingsForm.value.filter_type" style="margin-left: 20px">
           <mat-label>Smoothing coefficient</mat-label>
           <mat-slider formControlName="savgol_smoothing_coefficient" [max]="90" [min]="1" [step]="1" [thumbLabel]="true"
-                      [value]="processingSettings.savgol_smoothing_coefficient">
+                      [value]="transitionProcessingSettings.savgol_smoothing_coefficient">
           </mat-slider>
           <b>{{processingSettingsForm.value.savgol_smoothing_coefficient}}%</b>
         </div>
@@ -167,13 +167,13 @@
         <!--  X LABEL INPUT  -->
         <mat-form-field>
           <mat-label>X axis label</mat-label>
-          <input matInput formControlName="x_label" [value]="processingSettings.x_label">
+          <input matInput formControlName="x_label" [value]="transitionProcessingSettings.x_label">
         </mat-form-field>
 
         <!--  X UNIT INPUT  -->
         <mat-form-field style="margin-left: 20px">
           <mat-label>X axis unit</mat-label>
-          <input matInput formControlName="x_unit" [value]="processingSettings.x_unit">
+          <input matInput formControlName="x_unit" [value]="transitionProcessingSettings.x_unit">
         </mat-form-field>
 
       </div>
@@ -183,13 +183,13 @@
         <!--  Y LABEL INPUT  -->
         <mat-form-field>
           <mat-label>Y axis label</mat-label>
-          <input matInput formControlName="y_label" [value]="processingSettings.y_label">
+          <input matInput formControlName="y_label" [value]="transitionProcessingSettings.y_label">
         </mat-form-field>
 
         <!--  Y UNIT INPUT  -->
         <mat-form-field style="margin-left: 20px">
           <mat-label>Y axis unit</mat-label>
-          <input matInput formControlName="y_unit" [value]="processingSettings.y_unit">
+          <input matInput formControlName="y_unit" [value]="transitionProcessingSettings.y_unit">
         </mat-form-field>
 
       </div>
@@ -220,9 +220,9 @@
     </div>
 
     <app-data-preview
-      [previewData]="previewData"
+      [previewData]="commonService.transitionPreviewData"
       [sampleInfo]="sampleInfo"
-      [processingSettings]="processingSettings"
+      [transitionProcessingSettings]="transitionProcessingSettings"
     ></app-data-preview>
 
   </div>

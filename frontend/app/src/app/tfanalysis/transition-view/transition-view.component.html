@@ -2,21 +2,23 @@
 
   <div class="row">
     <div class="column" style="max-width: 35%">
-      <app-peak-finding-settings></app-peak-finding-settings>
+      <app-peak-finding-settings
+        [peakFindingSettings]="commonService.peakFindingSettings"
+      ></app-peak-finding-settings>
     </div>
 
 
     <div class="column" style="max-width: 65%">
       <app-transition-filter
         (filtersChanged)="sharePosFilter($event)"
-        [samples]="samples">
+        [samples]="sampleInfo">
       </app-transition-filter>
       <mat-divider></mat-divider>
 
       <div style="margin-left: 30px; margin-top: 5px;">
         <section>
           <h2 style="display: inline; margin-right: 20px">Plot data</h2>
-          <mat-button-toggle-group [(ngModel)]="plotDataType" aria-label="Font Style">
+          <mat-button-toggle-group [(ngModel)]="plotDataType" [value]="'normal'" aria-label="Font Style">
             <mat-button-toggle value="regular">Regularised</mat-button-toggle>
             <mat-button-toggle value="smooth">Smoothened</mat-button-toggle>
             <mat-button-toggle value="normal">Normalised</mat-button-toggle>
@@ -32,8 +34,8 @@
           [transitionData]="transitionData"
           [plotDataType]="plotDataType"
           [filterPosArr]="filterPosArr"
-          [samples]="samples"
-          [peaks]="peaks"
+          [samples]="sampleInfo"
+          [peaks]="peakData"
           [transitionProcessingSettings]="transitionProcessingSettings"
         ></app-transition-plot>
       </div>

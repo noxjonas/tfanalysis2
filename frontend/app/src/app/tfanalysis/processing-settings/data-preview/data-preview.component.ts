@@ -18,7 +18,7 @@ import {TransitionProcessingSettings} from '../processing-settings.component';
 export class DataPreviewComponent implements OnInit, OnChanges {
   @Input() previewData!: TransitionData[];
   @Input() sampleInfo!: SampleInfo[];
-  @Input() processingSettings!: TransitionProcessingSettings;
+  @Input() transitionProcessingSettings!: TransitionProcessingSettings;
 
   revision = 0;
   seriesColours = ['#7f7f7f', '#1f77b4', '#ff7f0e'];
@@ -131,9 +131,7 @@ export class DataPreviewComponent implements OnInit, OnChanges {
       },
     }};
 
-
-
-  constructor(private commonService: CommonService) { }
+  constructor() { }
 
   ngOnInit(): void {
   }
@@ -219,20 +217,20 @@ export class DataPreviewComponent implements OnInit, OnChanges {
     this.firstDerGraph.layout.xaxis.range = [min, max];
 
     // assign labels
-    if (this.processingSettings.x_unit.length > 1 && this.processingSettings.x_label.length > 1) {
-      this.firstDerGraph.layout.xaxis.title.text = this.processingSettings.x_label + ', ' + this.processingSettings.x_unit;
-    } else if (this.processingSettings.x_unit.length > 1) {
-      this.firstDerGraph.layout.xaxis.title.text = this.processingSettings.x_unit;
-    } else if (this.processingSettings.x_label.length > 1) {
-      this.firstDerGraph.layout.xaxis.title.text = this.processingSettings.x_label;
+    if (this.transitionProcessingSettings.x_unit.length > 1 && this.transitionProcessingSettings.x_label.length > 1) {
+      this.firstDerGraph.layout.xaxis.title.text = this.transitionProcessingSettings.x_label + ', ' + this.transitionProcessingSettings.x_unit;
+    } else if (this.transitionProcessingSettings.x_unit.length > 1) {
+      this.firstDerGraph.layout.xaxis.title.text = this.transitionProcessingSettings.x_unit;
+    } else if (this.transitionProcessingSettings.x_label.length > 1) {
+      this.firstDerGraph.layout.xaxis.title.text = this.transitionProcessingSettings.x_label;
     }
 
-    if (this.processingSettings.y_unit.length > 1 && this.processingSettings.y_label.length > 1) {
-      this.rawGraph.layout.yaxis.title.text = this.processingSettings.y_label + ', ' + this.processingSettings.y_unit;
-    } else if (this.processingSettings.y_unit.length > 1) {
-      this.rawGraph.layout.yaxis.title.text = this.processingSettings.y_unit;
-    } else if (this.processingSettings.y_label.length > 1) {
-      this.rawGraph.layout.yaxis.title.text = this.processingSettings.y_label;
+    if (this.transitionProcessingSettings.y_unit.length > 1 && this.transitionProcessingSettings.y_label.length > 1) {
+      this.rawGraph.layout.yaxis.title.text = this.transitionProcessingSettings.y_label + ', ' + this.transitionProcessingSettings.y_unit;
+    } else if (this.transitionProcessingSettings.y_unit.length > 1) {
+      this.rawGraph.layout.yaxis.title.text = this.transitionProcessingSettings.y_unit;
+    } else if (this.transitionProcessingSettings.y_label.length > 1) {
+      this.rawGraph.layout.yaxis.title.text = this.transitionProcessingSettings.y_label;
     }
 
     this.normalGraph.layout.yaxis.title.text = 'Normalised';

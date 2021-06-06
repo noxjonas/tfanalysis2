@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild, Output, ElementRef} from '@angular/core';
+import {Component, OnInit, ViewChild, Output, ElementRef, Input, OnChanges, SimpleChanges} from '@angular/core';
 import {TransitionViewService} from './transition-view.service';
 import {CommonService, PeakData} from '../common.service';
 import { TransitionData } from '../common.service';
@@ -15,41 +15,54 @@ import {ProcessingSettingsComponent, TransitionProcessingSettings} from '../proc
   templateUrl: './transition-view.component.html',
   styleUrls: ['./transition-view.component.css']
 })
-export class TransitionViewComponent implements OnInit {
-  transitionData!: TransitionData[];
+export class TransitionViewComponent implements OnInit, OnChanges {
+  @Input() sampleInfo: SampleInfo[];
+  @Input() transitionProcessingSettings: TransitionProcessingSettings;
+  @Input() transitionData!: TransitionData[];
+  @Input() peakData: PeakData[];
+
   plotDataType?: string;
+
   selected: any[] = [];
   filterPosArr: string[] = [];
-  samples: SampleInfo[] = [];
-  peaks: PeakData[] = [];
-  transitionProcessingSettings: TransitionProcessingSettings;
+
+  // TODO: rename
+  // peakData: PeakData[];
+
 
   @ViewChild('transitionPlot', {static: false}) transitionPlot: any;
 
   constructor(// private transitionViewService: TransitionViewService,
-              private commonService: CommonService,
+              public commonService: CommonService,
               // private processingSettingsComponent: ProcessingSettingsComponent,
               // private sampleInfoComponent: SampleInfoComponent
   ) {
-    commonService.transitionsProcessed$.subscribe(data => this.ngOnInit());
-    commonService.experimentSelected$.subscribe(experiment => this.ngOnInit());
-    commonService.sampleInfoChanged$.subscribe(data => {
-      this.samples = data;
-    });
-    commonService.peakFindingComplete$.subscribe(data => {
-      this.peaks = this.commonService.peakData;
-    });
+    // commonService.transitionsProcessed$.subscribe(data => this.ngOnInit());
+    // commonService.experimentSelected$.subscribe(experiment => this.ngOnInit());
+    // commonService.sampleInfoChanged$.subscribe(data => {
+    //   this.sampleInfo = data;
+    // });
+    // commonService.peakFindingComplete$.subscribe(data => {
+    //   this.peaks = this.commonService.peakData;
+    // });
     // processingSettingsComponent.transitionProcessingSettingsChanged$.subscribe(settings =>{
     //   this.transitionProcessingSettings = settings;
     // });
   }
 
   ngOnInit(): void {
-    this.plotDataType = 'regular';
-    if (this.commonService.selected) {
-      this.importData();
-      // this.makeFilters(this.commonService.sampleInfoData)
-    }
+    // this.plotDataType = 'regular';
+    // this.importData();
+    // if (this.commonService.selected) {
+    //   this.importData();
+    //   // this.makeFilters(this.commonService.sampleInfoData)
+    // }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // if (changes.transitionData) {
+    //
+    // }
   }
 
   sharePosFilter(data: any): void {

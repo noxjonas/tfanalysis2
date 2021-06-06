@@ -1,4 +1,4 @@
-<div *ngIf="samples.length != 0">
+<div *ngIf="sampleInfo">
 
   <div>
 
@@ -54,7 +54,7 @@
 
     <div>
       <hot-table class="ht_master"
-        [data]="samples"
+        [data]="sampleInfo"
         [settings]="hotSettings"
         [hotId]="id"
         licenseKey="non-commercial-and-evaluation"

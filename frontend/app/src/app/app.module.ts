@@ -8,13 +8,10 @@ import { TfanalysisComponent } from './tfanalysis/tfanalysis.component';
 import { MaterialModule } from './material/material.module';
 import { FileUploadComponent } from './tfanalysis/file-upload/file-upload.component';
 
-import { FileUploadService } from './tfanalysis/file-upload/file-upload.service';
-
 import { HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FilePickerModule } from 'ngx-awesome-uploader';
 import { SelectExperimentComponent } from './tfanalysis/select-experiment/select-experiment.component';
-import {SelectExperimentService} from './tfanalysis/select-experiment/select-experiment.service';
 import {MatTableModule} from '@angular/material/table';
 import {CommonService} from './tfanalysis/common.service';
 import { SampleInfoComponent } from './tfanalysis/sample-info/sample-info.component';
@@ -32,11 +29,11 @@ import { TransitionFilterComponent } from './tfanalysis/transition-view/transiti
 import * as PlotlyJS from 'plotly.js-dist';
 import { PlotlyModule } from 'angular-plotly.js';
 import { FileUploadDirective } from './tfanalysis/file-upload/file-upload.directive';
-import { UploadErrorDialogComponent } from './tfanalysis/file-upload/upload-error-dialog.component';
 import { DeleteConfirmDialogComponent } from './tfanalysis/select-experiment/delete-confirm-dialog.component';
 import { DataPreviewComponent } from './tfanalysis/processing-settings/data-preview/data-preview.component';
 import { SampleSelectorComponent } from './tfanalysis/processing-settings/sample-selector/sample-selector.component';
 import { PeakFindingSettingsComponent } from './tfanalysis/transition-view/peak-finding-settings/peak-finding-settings.component';
+import { StandardErrorDialogComponent } from './tfanalysis/error-dialogs/standard-error-dialog/standard-error-dialog.component';
 
 PlotlyModule.plotlyjs = PlotlyJS;
 
@@ -52,11 +49,11 @@ PlotlyModule.plotlyjs = PlotlyJS;
     TransitionPlotComponent,
     TransitionFilterComponent,
     FileUploadDirective,
-    UploadErrorDialogComponent,
     DeleteConfirmDialogComponent,
     DataPreviewComponent,
     SampleSelectorComponent,
     PeakFindingSettingsComponent,
+    StandardErrorDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -74,8 +71,6 @@ PlotlyModule.plotlyjs = PlotlyJS;
     PlotlyModule
   ],
   providers: [
-    FileUploadService,
-    SelectExperimentService,
     CommonService
   ],
   bootstrap: [AppComponent]

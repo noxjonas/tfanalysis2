@@ -1,56 +1,35 @@
-import {AfterViewInit, Component, EventEmitter, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
-import {MatPaginator} from '@angular/material/paginator';
-import {MatTableDataSource} from '@angular/material/table';
-import {SelectExperimentService} from './select-experiment.service';
-import {animate, state, style, transition, trigger} from '@angular/animations';
-import {CommonService} from '../common.service';
-import {TransitionProcessingSettings, ProcessingSettingsComponent} from '../processing-settings/processing-settings.component';
+import { Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatTableDataSource } from '@angular/material/table';
+import { CommonService } from '../common.service';
 import { Experiment } from '../common.service';
-import {FormControl, FormGroup, Validators} from '@angular/forms';
-import {UploadErrorDialogComponent} from '../file-upload/upload-error-dialog.component';
-import {MatDialog} from '@angular/material/dialog';
-import {DeleteConfirmDialogComponent} from './delete-confirm-dialog.component';
-
-// TODO: add filters by project/data/etc?
-// export interface Experiment {
-//   id: number;
-//   parser: string;
-//   uploaded: string;
-//   updated: string;
-//   name: string;
-//   project: string;
-//   user: string;
-//   notes: string;
-//   parse_warnings: string;
-//   expanded?: false;
-// }
+import { FormControl, FormGroup } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
+import { DeleteConfirmDialogComponent } from './delete-confirm-dialog.component';
 
 @Component({
   selector: 'app-select-experiment',
   templateUrl: './select-experiment.component.html',
   styleUrls: ['./select-experiment.component.css'],
-  // animations: [
-  //   trigger('detailExpand', [
-  //     state('collapsed', style({height: '0px', minHeight: '0'})),
-  //     state('expanded', style({height: '*'})),
-  //     transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
-  //   ]),
-  // ],
 })
-export class SelectExperimentComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'project', 'user', 'uploaded', 'select'];
+
+export class SelectExperimentComponent implements OnInit, OnChanges {
+  @Input() selectedExperiment!: Experiment;
+  @Input() experiments!: Experiment[];
+
+  displayedColumns: string[] = ['name', 'project', 'user', 'updated', 'select'];
   dataSource!: MatTableDataSource<Experiment>;
-  selectedExperiment!: Experiment;
+
   experimentUpdateForm = new FormGroup({
-    id: new FormControl(''), // Inaccessible to change, but guarantees uniqueness
-    parser: new FormControl(''), // Inaccessible to change
+    id: new FormControl(''), // Cannot be changed, but guarantees uniqueness
+    parser: new FormControl(''), // Cannot be changed
     name: new FormControl(''),
     project: new FormControl(''),
-    user: new FormControl(''), // Inaccessible to change
+    user: new FormControl(''), // Cannot be changed
     notes: new FormControl(''),
   });
-  instrumentInfo: any;
-  parseWarnings: any;
+  instrumentInfo: any; // Parsed from JSON
+  parseWarnings: any; // Parsed from JSON
 
   nameFilter = new FormControl();
   projectFilter = new FormControl();
@@ -61,21 +40,15 @@ export class SelectExperimentComponent implements OnInit {
     name: '', project: '', user: ''
   };
 
-
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  constructor(private selectExperimentService: SelectExperimentService,
-              private commonService: CommonService,
-              public deleteConfirmDialog: MatDialog) {
-    commonService.experimentSelected$.subscribe(experiment => {
-      this.selectedExperiment = experiment;
-      this.showExperiments();
-    });
-  }
+  constructor(
+    private commonService: CommonService,
+    public deleteConfirmDialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
-    // The reason for refreshing the info is because otherwise mat-table gets all bugged with open/closed expansion panels
-    this.showExperiments();
+    this.commonService.fetchExperiments();
 
     this.nameFilter.valueChanges.subscribe((nameFilterValue) => {
       this.filteredValues.name = nameFilterValue;
@@ -90,6 +63,18 @@ export class SelectExperimentComponent implements OnInit {
       this.filteredValues.user = userFilterValue;
       this.dataSource.filter = JSON.stringify(this.filteredValues);
     });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes.experiments) {
+      this.dataSource = new MatTableDataSource(this.experiments);
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.filterPredicate = this.customFilterPredicate();
+      this.applyFilter(this.globalFilter);
+    }
+    if (changes.selectedExperiment && this.selectedExperiment) {
+      this.setExperimentInfo();
+    }
   }
 
   applyFilter(filter: any): void {
@@ -126,20 +111,8 @@ export class SelectExperimentComponent implements OnInit {
     this.commonService.selectExperiment(experiment);
   }
 
-  showExperiments(update?: boolean): void {
-    this.commonService.fetchExperiments()
-      .subscribe(data => {
-        this.dataSource = new MatTableDataSource(data);
-        this.dataSource.paginator = this.paginator;
-        this.dataSource.filterPredicate = this.customFilterPredicate();
-        this.selectedExperiment = this.commonService.getSelectedExperiment();
-        if (this.selectedExperiment && !update) {
-          this.setExperimentInfo();
-        }
-      });
-  }
-
   setExperimentInfo(): void {
+    // Could be a loop?
     this.experimentUpdateForm.get('id').setValue(this.selectedExperiment.id);
     this.experimentUpdateForm.get('parser').setValue(this.selectedExperiment.parser);
     this.experimentUpdateForm.get('name').setValue(this.selectedExperiment.name);
@@ -151,23 +124,17 @@ export class SelectExperimentComponent implements OnInit {
   }
 
   updateExperimentInfo(): void {
-    this.commonService.updateExperimentInfo(this.experimentUpdateForm.getRawValue()).subscribe( data => {
-      this.showExperiments(true);
-    });
+    this.commonService.updateExperimentInfo(this.experimentUpdateForm.getRawValue());
   }
 
   deleteExperiment(): void {
-
     const dialogRef = this.deleteConfirmDialog.open(DeleteConfirmDialogComponent, {
       width: '300px',
       data: this.selectedExperiment,
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result === this.selectedExperiment.id) {
-        this.commonService.deleteExperiment(this.selectedExperiment.id).subscribe(data => {
-          this.commonService.selectExperiment(null);
-          this.showExperiments();
-        });
+        this.commonService.deleteExperiment(this.selectedExperiment);
       }
     });
 

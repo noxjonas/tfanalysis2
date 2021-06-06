@@ -62,11 +62,11 @@ class UploadData(APIView):
 
             parser_validator = ParserValidator(data)
             if not parser_validator.is_valid:
-                return JsonResponse({'message': 'Parser returned invalid data:', 'info': parser_validator.errors}, status=400)
+                return JsonResponse({'custom_message': 'Parser returned invalid data:', 'detail': parser_validator.errors}, status=400)
 
         except Exception as E:
             [os.remove(i) for i in paths]  # Cleanup files
-            return JsonResponse({'message': 'Parser failed with following error:', 'info': [str(E)]}, status=400)
+            return JsonResponse({'custom_message': 'Parser failed with following error:', 'detail': [str(E)]}, status=400)
 
         parser = Parsers.objects.filter(python_class_name=request.POST.get('parser'))[0]
 
@@ -112,14 +112,14 @@ class UploadData(APIView):
                 experiment=experiment,
                 raw_data=RawData.objects.get(pk=row['raw_data_id']),
                 pos=row['pos'],
-                code='',
-                name='',
-                description='',
-                buffer='',
-                condition='',
-                concentration='',
-                unit='',
-                group='',
+                # code='',
+                # name='',
+                # description='',
+                # buffer='',
+                # condition='',
+                # concentration='',
+                # unit='',
+                # group='',
                 manual_outlier=False,
                 is_blank=False,
             )
@@ -156,9 +156,9 @@ class FetchExperiments(APIView):
 
     def post(self, request):
         experiments = Experiments.objects.all()
-        serialised = ExperimentsSerializer(experiments, many=True)
+        serializer = ExperimentsSerializer(experiments, many=True)
 
-        return JsonResponse(serialised.data, safe=False, status=200)
+        return JsonResponse(serializer.data, safe=False, status=200)
 
 
 class UpdateExperimentInfo(APIView):
@@ -167,16 +167,18 @@ class UpdateExperimentInfo(APIView):
         serializer = ExperimentsSerializer(data=request.data, ignore_fields=['parser'])
 
         if not serializer.is_valid():
-            return Response({'update_status': 'fail'}, status=400)
+            # TODO: implement generic cutom_message errors on frontend
+            return JsonResponse({'custom_message': 'Data supplied in experiment upload form is invalid!'}, status=400)
 
-        Experiments.objects.filter(pk=serializer.data['id']).update(
-            name=serializer.data['name'],
-            project=serializer.data['project'],
-            user=serializer.data['user'],
-            notes=serializer.data['notes'],
-        )
+        experiment = Experiments.objects.get(pk=serializer.data['id'])
 
-        return Response({'update_status': 'success'}, status=200)
+        for key, value in serializer.data.items():
+            setattr(experiment, key, value)
+            experiment.save()
+
+        serializer = ExperimentsSerializer(experiment)
+
+        return JsonResponse(serializer.data, status=200)
 
 
 class DeleteExperiment(APIView):
@@ -195,11 +197,11 @@ class DeleteExperiment(APIView):
 class FetchSampleInfo(APIView):
 
     def post(self, request):
-        experiment_id = int(request.POST.get('experiment_id'))
-        sample_info = SampleInfo.objects.filter(experiment_id=experiment_id).all()
-        serialised = SampleInfoSerializer(sample_info, many=True)
+        experiment = Experiments.objects.get(pk=request.data['id'])
+        sample_info = SampleInfo.objects.filter(experiment=experiment).all()
+        serializer = SampleInfoSerializer(sample_info, many=True)
 
-        return JsonResponse(serialised.data, safe=False, status=200)
+        return JsonResponse(serializer.data, safe=False, status=200)
 
 
 class UpdateSampleInfo(APIView):
@@ -229,7 +231,7 @@ class UpdateSampleInfo(APIView):
                 is_blank=False if i['is_blank'] is None else i['is_blank'],
             )
 
-        return Response({'update_status': 'success'}, status=200)
+        return JsonResponse(serializer.data, safe=False, status=200)
 
 
 class FetchTransitionProcessingSettings(APIView):
@@ -246,7 +248,7 @@ class UpdateTransitionProcessingSettings(APIView):
 
     def put(self, request):
         serializer = TransitionProcessingSettingsSerializer(data=request.data, ignore_fields=('id', 'experiment', 'default_settings'))
-        print('this is the experiment in updating processing settings', request.data['id'])
+        # This receives form data, where id refers to settings id, not experiment
         experiment = Experiments.objects.get(pk=request.data['experiment'])
 
         if not serializer.is_valid():
@@ -263,7 +265,7 @@ class UpdateTransitionProcessingSettings(APIView):
             processed_data = ProcessedTransitionData.objects.filter(experiment=experiment).all()
             processed_data.delete()
 
-        return JsonResponse(serializer.data, status=200)
+        return JsonResponse(TransitionProcessingSettingsSerializer(settings).data, status=200)
 
 
 class ResetTransitionProcessingSettings(APIView):
@@ -283,7 +285,7 @@ class ResetTransitionProcessingSettings(APIView):
             processed_data = ProcessedTransitionData.objects.filter(experiment=experiment).all()
             processed_data.delete()
 
-        return Response({'update_status': 'success'}, status=200)
+        return Response(TransitionProcessingSettingsSerializer(settings).data, status=200)
 
 
 class PreviewTransitionProcessing(APIView):
@@ -443,7 +445,7 @@ class ResetPeakFindingSettings(APIView):
             peak_data = PeakData.objects.filter(experiment=experiment).all()
             peak_data.delete()
 
-        return Response({'update_status': 'success'}, status=200)
+        return Response(PeakFindingSettingsSerializer(settings).data, status=200)
 
 
 class FindPeaks(APIView):

@@ -19,34 +19,57 @@
         </div>
       </ng-template>
       <div>
+<!--        TODO: I know this is never shown, but could clean it up...-->
         <p>tfanalysis works!</p>
         <i class="material-icons">attach_file</i>
       </div>
+
+    <!--   DATA FILE IMPORT TAB   -->
     </mat-tab>
-    <mat-tab label="Import"><app-file-upload
-      (rawUploadInProgress$)="onRawUploadProgress($event)"
-      (rawUploadSuccess$)="onRawUploadSuccess($event)"
-    ></app-file-upload></mat-tab>
+    <mat-tab label="Import">
+      <app-file-upload
+        [parsers]="commonService.parsers"
+    ></app-file-upload>
+    </mat-tab>
+
+    <!--   EXPERIMENT SELECTION TAB   -->
     <mat-tab label="Select">
-<!--      <ng-template matTabContent>-->
-        <app-select-experiment></app-select-experiment>
-<!--      </ng-template>-->
+      <app-select-experiment
+        [selectedExperiment]="commonService.selectedExperiment"
+        [experiments]="commonService.experiments"
+      ></app-select-experiment>
     </mat-tab>
-    <mat-tab label="Sample info"
-    >
-<!--      <ng-template matTabContent>-->
-        <app-sample-info *ngIf="experimentSelected"></app-sample-info>
-<!--      </ng-template>-->
+
+    <!--  SAMPLE INFO TAB  -->
+    <mat-tab label="Sample info">
+        <app-sample-info
+          *ngIf="experimentSelected"
+          [sampleInfo]="commonService.sampleInfo"
+        ></app-sample-info>
     </mat-tab>
-    <mat-tab label="Processing settings"  >
-      <!--      <ng-template matTabContent>-->
-      <app-processing-settings  *ngIf="experimentSelected"></app-processing-settings>
-      <!--      </ng-template>-->
+
+    <!--  TRANSITION PROCESSING SETTINGS TAB  -->
+    <mat-tab label="Transition processing"  >
+      <app-processing-settings
+        *ngIf="experimentSelected"
+        [sampleInfo]="commonService.sampleInfo"
+        [transitionProcessingSettings]="commonService.transitionProcessingSettings"
+      ></app-processing-settings>
     </mat-tab>
+
+    <!--  TRANSITION VIEW / PEAK FINDING TAB  -->
     <mat-tab label="Transition view"  >
-      <!--      <ng-template matTabContent>-->
-      <app-transition-view  *ngIf="experimentSelected"></app-transition-view>
-      <!--      </ng-template>-->
+      <app-transition-view
+        *ngIf="experimentSelected"
+        [sampleInfo]="commonService.sampleInfo"
+        [transitionProcessingSettings]="commonService.transitionProcessingSettings"
+        [transitionData]="commonService.transitionData"
+        [peakData]="commonService.peakData"
+      ></app-transition-view>
     </mat-tab>
+
+
+
+
   </mat-tab-group>
 </div>

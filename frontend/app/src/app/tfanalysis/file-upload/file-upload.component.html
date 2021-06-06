@@ -10,7 +10,7 @@
         </div>
 
         <div *ngIf="extensionWarning" class="extension-warning">
-          <b>Warning!</b> One or more files you intend to upload have unsupported extensions for this parser!<br>
+          <b>Warning!</b> Selected files have unsupported extensions for this parser!<br>
           Supported extensions: {{selectedParser.accepted_file_types.join(', ')}}
         </div>
 
@@ -20,15 +20,16 @@
 
         <div class="files-list">
           <div class="single-file" *ngFor="let file of files; let i = index">
-            <i style="font-size: 25px; margin-right: 10px" class="material-icons">attach_file</i>
-            <div class="info">
-              <h4 class="name">
-                {{ file?.name }}
-              </h4>
-              <p class="size">
-                {{ formatBytes(file?.size) }}
-              </p>
-              <!--        <app-progress [progress]="file?.progress"></app-progress>-->
+            <div style="display: inline-flex; align-items: center;">
+              <i style="font-size: 25px; margin-right: 10px" class="material-icons">attach_file</i>
+              <div class="info">
+                <h4 class="name">
+                  {{ file?.name }}
+                </h4>
+                <p class="size">
+                  {{ formatBytes(file?.size) }}
+                </p>
+              </div>
             </div>
             <i (click)="deleteFile(i)" style="font-size: 25px; color: #F44336;" class="material-icons delete">delete</i>
           </div>
@@ -37,7 +38,8 @@
 
       </div>
 
-      <div class="column" style="max-width: 60%">
+      <div class="column" style="max-width: 60%;">
+
         <form [formGroup]="fileUploadForm" (ngSubmit)="onSubmit()" class="form-column">
           <div style="display: inline-flex">
             <mat-form-field appearance="fill">
@@ -74,15 +76,15 @@
           <mat-form-field style="max-width: 600px; margin-top: 10px">
             <mat-label>Notes</mat-label>
             <textarea matInput type="text" formControlName="notes"></textarea>
-<!--            Button for clearing not implemented. Need to write a function in .ts to clear-->
-<!--            <button mat-button *ngIf="fileUploadForm.value.notes" matSuffix mat-icon-button aria-label="Clear"-->
-<!--                    (click)="fileUploadForm.value.notes=''">-->
-<!--              <mat-icon>close</mat-icon>-->
-<!--            </button>-->
           </mat-form-field>
           <button mat-raised-button type="submit" color="primary" style="max-width: 100px">Submit</button>
         </form>
+
+        <button mat-raised-button (click)="resetUploadForm()" color="accent" class="clear-button">Clear</button>
+
       </div>
+
+
 
 </div>
 
