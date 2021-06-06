@@ -2,7 +2,6 @@ import {Component, OnInit, ViewChild, Output, ElementRef, Input, OnChanges, Simp
 import {TransitionViewService} from './transition-view.service';
 import {CommonService, PeakData} from '../common.service';
 import { TransitionData } from '../common.service';
-import {MatPaginator} from '@angular/material/paginator';
 import {TransitionPlotComponent} from './transition-plot/transition-plot.component';
 import {SampleInfo, SampleInfoComponent} from '../sample-info/sample-info.component';
 import {FormControl, FormGroup, FormArray} from '@angular/forms';
