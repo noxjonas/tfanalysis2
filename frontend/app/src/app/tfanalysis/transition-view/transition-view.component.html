@@ -13,28 +13,28 @@
       </app-transition-filter>
       <mat-divider></mat-divider>
 
-      <div style="margin-left: 30px">
+      <div style="margin-left: 30px; margin-top: 5px;">
         <section>
-          <h2 style="display: inline; margin-right: 10px">Plot data:</h2>
+          <h2 style="display: inline; margin-right: 20px">Plot data</h2>
           <mat-button-toggle-group [(ngModel)]="plotDataType" aria-label="Font Style">
-    <!--        <mat-button-toggle value="raw">Raw data</mat-button-toggle>-->
-            <mat-button-toggle value="regular">Regularised data</mat-button-toggle>
-            <mat-button-toggle value="smooth">Smoothened data</mat-button-toggle>
-            <mat-button-toggle value="normal">Normalised data</mat-button-toggle>
-            <mat-button-toggle value="first_der">First derivative data</mat-button-toggle>
+            <mat-button-toggle value="regular">Regularised</mat-button-toggle>
+            <mat-button-toggle value="smooth">Smoothened</mat-button-toggle>
+            <mat-button-toggle value="normal">Normalised</mat-button-toggle>
+            <mat-button-toggle value="first_der">First derivative</mat-button-toggle>
           </mat-button-toggle-group>
-    <!--      <p>Chosen value is {{fontStyle}}</p>-->
+
+          <button style="margin-left: 20px" mat-raised-button (click)="recolourPlot()" color="accent">Recolour</button>
+
         </section>
-        <button (click)="testCall()">call</button>
 
-
-        <app-transition-plot style="margin-left: 30px"
+        <app-transition-plot style="margin-left: 30px" #transitionPlot
           *ngIf="filterPosArr"
           [transitionData]="transitionData"
           [plotDataType]="plotDataType"
           [filterPosArr]="filterPosArr"
           [samples]="samples"
           [peaks]="peaks"
+          [transitionProcessingSettings]="transitionProcessingSettings"
         ></app-transition-plot>
       </div>
     </div>

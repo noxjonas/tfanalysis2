@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, EventEmitter, OnInit, AfterViewInit} from '@angular/core';
 import { CommonService, TransitionData } from '../common.service';
 import { FormGroup, FormControl } from '@angular/forms';
 import { SampleInfo } from '../sample-info/sample-info.component';
@@ -54,11 +54,17 @@ export class ProcessingSettingsComponent implements OnInit {
   filterPos: string[] = [];
   previewData: TransitionData[] = [];
 
+  // Need to transfer axis labels to the transition view; use event emitter
+  // public transitionProcessingSettingsChanged$: EventEmitter<TransitionProcessingSettings>;
+
   constructor(private commonService: CommonService) {
-    commonService.experimentSelected$.subscribe(experiment => this.importProcessingSettings());
+    commonService.experimentSelected$.subscribe(experiment => (experiment !== null ? this.importProcessingSettings() : null));
+    // TODO: fetch sample info as soon as experiment is selected? this is probably what is preventing auto load on first run
     commonService.sampleInfoChanged$.subscribe(data => {
       this.sampleInfo = data;
     });
+    // this.transitionProcessingSettingsChanged$ = new EventEmitter();
+
   }
 
   ngOnInit(): void {
@@ -126,6 +132,8 @@ export class ProcessingSettingsComponent implements OnInit {
     // first update the settings and process selected samples
     this.commonService.updateTransitionProcessingSettings(this.processingSettingsForm.getRawValue()).subscribe( settings => {
       this.processingSettings = settings;
+      // this.transitionProcessingSettingsChanged$.emit(settings);
+      this.commonService.transitionProcessingSettings = settings;
       this.commonService.postPreviewTransitionProcessing(this.filterPos).subscribe(data => {
         this.previewData = data;
       });
@@ -134,10 +142,13 @@ export class ProcessingSettingsComponent implements OnInit {
 
   callDataProcessing(): void {
     // first update the settings
-    this.commonService.updateTransitionProcessingSettings(this.processingSettingsForm.getRawValue()).subscribe( data => {
+    this.commonService.updateTransitionProcessingSettings(this.processingSettingsForm.getRawValue()).subscribe( settings => {
+      this.processingSettings = settings;
+      // this.transitionProcessingSettingsChanged$.emit(settings);
+      this.commonService.transitionProcessingSettings = settings;
       this.commonService.fetchProcessedTransitionData();
     }, error => {
-      console.log('Failed while uploading settings to the backend');
+      console.log('Failed while uploading settings to the backend', this.commonService.selected);
     });
   }
 

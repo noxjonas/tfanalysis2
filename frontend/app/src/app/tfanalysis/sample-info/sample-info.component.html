@@ -1,6 +1,6 @@
-<div *ngIf="samples.length != 0" class="row">
+<div *ngIf="samples.length != 0">
 
-  <div class="column">
+  <div>
 
     <div style="display: inline-flex">
       <span>Sample info imports:</span>
@@ -52,7 +52,7 @@
 
 
 
-    <div style="">
+    <div>
       <hot-table class="ht_master"
         [data]="samples"
         [settings]="hotSettings"
@@ -61,8 +61,9 @@
         >
 
         <hot-column data="pos" [readOnly]="true" title="pos"></hot-column>
-        <hot-column data="code" title="code"></hot-column>
         <hot-column data="name" title="name"></hot-column>
+
+        <hot-column data="code" title="code"></hot-column>
         <hot-column data="description" title="description"></hot-column>
         <hot-column data="buffer" title="buffer"></hot-column>
         <hot-column data="condition" title="condition"></hot-column>

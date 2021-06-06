@@ -35,17 +35,17 @@
     <mat-tab label="Sample info"
     >
 <!--      <ng-template matTabContent>-->
-        <app-sample-info></app-sample-info>
+        <app-sample-info *ngIf="experimentSelected"></app-sample-info>
 <!--      </ng-template>-->
     </mat-tab>
     <mat-tab label="Processing settings"  >
       <!--      <ng-template matTabContent>-->
-      <app-processing-settings></app-processing-settings>
+      <app-processing-settings  *ngIf="experimentSelected"></app-processing-settings>
       <!--      </ng-template>-->
     </mat-tab>
     <mat-tab label="Transition view"  >
       <!--      <ng-template matTabContent>-->
-      <app-transition-view></app-transition-view>
+      <app-transition-view  *ngIf="experimentSelected"></app-transition-view>
       <!--      </ng-template>-->
     </mat-tab>
   </mat-tab-group>

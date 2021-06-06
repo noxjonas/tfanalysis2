@@ -76,13 +76,15 @@ export class PeakFindingSettingsComponent implements OnInit {
           threshold_min: new FormControl(this.peakFindingSettings?.threshold_min),
           threshold_max: new FormControl(this.peakFindingSettings?.threshold_max),
         });
+        // TODO: Take care with this
+        this.callPeakFinding();
       });
   }
 
   resetSettings(): void {
     this.commonService.resetPeakFindingSettings().subscribe(data => {
       this.importPeakFindingSettings();
-    })
+    });
   }
 
 

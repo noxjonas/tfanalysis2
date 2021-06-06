@@ -129,7 +129,6 @@ export class SelectExperimentComponent implements OnInit {
   showExperiments(update?: boolean): void {
     this.commonService.fetchExperiments()
       .subscribe(data => {
-        console.log('this is all experiments', data);
         this.dataSource = new MatTableDataSource(data);
         this.dataSource.paginator = this.paginator;
         this.dataSource.filterPredicate = this.customFilterPredicate();
@@ -164,7 +163,6 @@ export class SelectExperimentComponent implements OnInit {
       data: this.selectedExperiment,
     });
     dialogRef.afterClosed().subscribe(result => {
-      console.log('result from dialog', result);
       if (result === this.selectedExperiment.id) {
         this.commonService.deleteExperiment(this.selectedExperiment.id).subscribe(data => {
           this.commonService.selectExperiment(null);

@@ -45,8 +45,13 @@ export class SampleInfoComponent implements OnInit {
     rowHeaders: true,
     colHeaders: true,
     stretchH: 'all',
-    height: 24,
-    // width: 800,
+    // rowHeights: 24,
+    // preventOverflow: 'vertical',
+    colWidths: [55, 80, 80, 80, 80, 80, 80],
+    rowHeights: [24], // <-- this one sets fixed row height
+    manualColumnResize: true,
+    manualRowResize: true,
+    width: 1000,
   };
   private hotRegisterer = new HotTableRegisterer();
   id = 'sample-info';
@@ -75,7 +80,7 @@ export class SampleInfoComponent implements OnInit {
     commonService.sampleInfoChanged$.subscribe(data => {
       this.samples = data;
       this.hotSettings.height = this.samples.length*24+24;
-    })
+    });
   }
 
   ngOnInit(): void {

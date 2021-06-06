@@ -206,19 +206,6 @@ export class DataPreviewComponent implements OnInit, OnChanges {
 
     this.styleGraphs();
 
-    // this.rawGraph = {
-    //   data: rawData,
-    //   layout: {width: 600, height: 400}
-    // };
-    // this.normalGraph = {
-    //   data: normalData,
-    //   layout: {width: 600, height: 400}
-    // };
-    // this.firstDerGraph = {
-    //   data: firstDerData,
-    //   layout: {width: 600, height: 400}
-    // };
-
     this.revision += 1;
   }
 

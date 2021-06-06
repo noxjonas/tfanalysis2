@@ -1,13 +1,15 @@
 <div>
   <div>
-    <button (click)="applyColors()">plot test call</button>
+<!--    <button (click)="applyColors()">plot test call</button>-->
 <!--    <link rel="stylesheet" href="./node_modules/uplot/dist/uPlot.min.css">-->
 <!--    <script src="../../../../../node_modules/uplot/dist/uPlot.iife.min.js"></script>-->
     <plotly-plot *ngIf="graph.data[0].meta != 'loading'"
                  [data]="graph.data"
                  [layout]="graph.layout"
+                 [config]="config"
                  [updateOnlyWithRevision]="true"
                  [revision]="revision"
+                 (restyle)="adjustPeakVisibility()"
     ></plotly-plot>
 <!--    <div #chartElement ></div>-->
   </div>

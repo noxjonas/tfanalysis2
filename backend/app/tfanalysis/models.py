@@ -91,7 +91,7 @@ class Parsers(models.Model):
         db_table = 'parsers'
 
 class Experiments(models.Model):
-    parser = models.ForeignKey(Parsers, on_delete=models.RESTRICT)
+    parser = models.ForeignKey(Parsers, on_delete=models.CASCADE)
     uploaded = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     name = models.TextField()
@@ -135,14 +135,14 @@ class SampleInfo(models.Model):
     raw_data = models.ForeignKey(RawData, on_delete=models.CASCADE) # do not use this?
     updated = models.DateTimeField(auto_now=True)
     pos = models.CharField(max_length=16)
-    code = models.TextField(blank=True)
-    name = models.TextField(blank=True)
-    description = models.TextField(blank=True)
-    buffer = models.TextField(blank=True)
-    condition = models.TextField(blank=True)
-    concentration = models.TextField(blank=True)
-    unit = models.TextField(blank=True)
-    group = models.TextField(blank=True)
+    code = models.TextField(blank=True, null=True)
+    name = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    buffer = models.TextField(blank=True, null=True)
+    condition = models.TextField(blank=True, null=True)
+    concentration = models.TextField(blank=True, null=True)
+    unit = models.TextField(blank=True, null=True)
+    group = models.TextField(blank=True, null=True)
     manual_outlier = models.BooleanField()
     is_blank = models.BooleanField()
 
@@ -299,9 +299,9 @@ class PeakData(models.Model):
 
     pos = models.CharField(max_length=16)
 
-    x = ArrayField(models.FloatField())
-    y = ArrayField(models.FloatField())
-    index = ArrayField(models.IntegerField())
+    x = ArrayField(models.FloatField(), null=True, blank=True)
+    y = ArrayField(models.FloatField(), null=True, blank=True)
+    index = ArrayField(models.IntegerField(), null=True, blank=True)
 
     class Meta:
         db_table = 'peak_data'

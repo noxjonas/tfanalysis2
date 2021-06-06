@@ -12,13 +12,23 @@ export class TfanalysisComponent implements AfterViewInit {
   uploading = false;
   selectedTab = new FormControl(1);
 
+  experimentSelected: boolean;
+
   constructor(private commonService: CommonService) {
     commonService.transitionsProcessingStarted$.subscribe(data => (this.loading = true));
     commonService.transitionsProcessed$.subscribe(data => {
       this.selectedTab.setValue(5);
       this.loading = false;
     });
+
+    commonService.peakFindingStarted$.subscribe(data => (this.loading = true));
+    commonService.peakFindingComplete$.subscribe(data => (this.loading = false));
+
+    commonService.experimentSelected$.subscribe(data => {
+      this.experimentSelected = data !== null;
+    });
   }
+
   ngAfterViewInit(): void {
   }
 

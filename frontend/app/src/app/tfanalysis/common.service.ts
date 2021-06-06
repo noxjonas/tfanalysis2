@@ -60,9 +60,9 @@ export interface PeakData {
 
   pos: string;
 
-  peaks_x: number[];
-  peaks_y: number[];
-  peaks_index: number[];
+  x: number[];
+  y: number[];
+  index: number[];
   [key: string]: any;
 }
 
@@ -81,6 +81,7 @@ export class CommonService {
   public sampleInfoChanged$: EventEmitter<SampleInfo[]>;
   public sampleInfoData!: SampleInfo[];
   public parsers!: Parsers[];
+  public transitionProcessingSettings: TransitionProcessingSettings;
 
   public peakData!: PeakData[];
   public peakFindingStarted$: EventEmitter<boolean>;
@@ -122,8 +123,12 @@ export class CommonService {
   }
 
   public selectExperiment(experiment: any): Experiment {
+    // TODO: experiment is not selected after uploading? something wrong with delete
+    // TODO: actually, it appears that update of settings is called while the data is from the old experiment; still only happens after delete
+    // TODO: can I just reinit all of the processing components after experiment is changed? or DELETED
+    // TODO: this appears to be fixed, but on the first run automatic processing does not work? because views aren't initialized?
+    console.log('this is the experiment being selected', experiment);
     this.selected = experiment;
-    console.log('There is something wrong with selected experiment', this.selected);
     this.experimentSelected$.emit(experiment);
     return this.selected;
   }
@@ -155,17 +160,10 @@ export class CommonService {
     this._fetchSampleInfo()
       .subscribe(data => {
         this.sampleInfoData = data;
-        // this.commonService.shareSampleInfo(data)
         this.sampleInfoChanged$.emit(data);
       });
   }
   public postSampleInfo(sampleInfo: any): Observable<any> {
-    const httpOptions = {
-      headers: new HttpHeaders({
-        'Content-Type': 'application/json'
-      })
-    };
-    console.log('what does sample info look like', sampleInfo);
     this.sampleInfoChanged$.emit(sampleInfo);
     this.sampleInfoData = sampleInfo;
     return this.http.put<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/updatesampleinfo/', JSON.stringify(sampleInfo), this.jsonHttpOptions);

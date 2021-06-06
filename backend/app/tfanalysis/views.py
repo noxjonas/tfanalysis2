@@ -149,7 +149,7 @@ class UploadData(APIView):
 
         serializer = ExperimentsSerializer(experiment)
 
-        return Response(serializer.data, status=201)
+        return JsonResponse(serializer.data, status=201)
 
 
 class FetchExperiments(APIView):
@@ -182,7 +182,13 @@ class UpdateExperimentInfo(APIView):
 class DeleteExperiment(APIView):
 
     def post(self, request):
-        Experiments.objects.get(pk=request.data['id']).delete()
+        experiment = Experiments.objects.get(pk=request.data['id'])#.delete()
+
+        # TODO: need to delete separately, otherwise it kills django; see if problem persists if db completely remade; mixins?
+        PeakFindingSettings.objects.filter(experiment=experiment).delete()
+        TransitionProcessingSettings.objects.filter(experiment=experiment).delete()
+
+        experiment.delete()
         return Response({'update_status': 'success'}, status=200)
 
 
@@ -199,22 +205,26 @@ class FetchSampleInfo(APIView):
 class UpdateSampleInfo(APIView):
 
     def put(self, request):
-        serializer = SampleInfoSerializer(data=request.data, many=True, ignore_fields=('experiment', 'raw_data'))
+        serializer = SampleInfoSerializer(data=request.data, many=True, allow_null=True, ignore_fields=('experiment', 'raw_data'))
 
+        # TODO: handsontable still gives some weird nonsense sometimes, keep track
         if not serializer.is_valid():
+            print('Sample info update failing', serializer.errors)
             return Response({'update_status': 'fail'}, status=400)
+
+        print('sample info serialiser data', serializer.data)
 
         for i in serializer.data:
             SampleInfo.objects.filter(pk=i['id']).update(
                 # Using conditionals here since handsontable can return null values
-                code='' if i['code'] is None else i['code'],
-                name='' if i['name'] is None else i['name'],
-                description='' if i['description'] is None else i['description'],
-                buffer='' if i['buffer'] is None else i['buffer'],
-                condition='' if i['condition'] is None else i['condition'],
-                concentration='' if i['concentration'] is None else i['concentration'],
-                unit='' if i['unit'] is None else i['unit'],
-                group='' if i['group'] is None else i['group'],
+                code=i['code'],
+                name=i['name'],
+                description=i['description'],
+                buffer=i['buffer'],
+                condition=i['condition'],
+                concentration=i['concentration'],
+                unit=i['unit'],
+                group=i['group'],
                 manual_outlier=False if i['manual_outlier'] is None else i['manual_outlier'],
                 is_blank=False if i['is_blank'] is None else i['is_blank'],
             )
@@ -236,6 +246,7 @@ class UpdateTransitionProcessingSettings(APIView):
 
     def put(self, request):
         serializer = TransitionProcessingSettingsSerializer(data=request.data, ignore_fields=('id', 'experiment', 'default_settings'))
+        print('this is the experiment in updating processing settings', request.data['id'])
         experiment = Experiments.objects.get(pk=request.data['experiment'])
 
         if not serializer.is_valid():
@@ -393,6 +404,7 @@ class FetchPeakFindingSettings(APIView):
 class UpdatePeakFindingSettings(APIView):
 
     def put(self, request):
+        print('trying to update experiment', request.data['id'], 'with update of peak finding')
         serializer = PeakFindingSettingsSerializer(data=request.data, ignore_fields=('id', 'experiment', 'default_settings'))
         experiment = Experiments.objects.get(pk=request.data['experiment'])
 
@@ -451,7 +463,13 @@ class FindPeaks(APIView):
             return JsonResponse(serializer.data, safe=False, status=200)
 
         # Process the data otherwise
-        processor = PeakFindingProcessor(request.data['id'])
+        # TODO: check if this fails with bad options?
+        try:
+            processor = PeakFindingProcessor(request.data['id'])
+        except Exception as E:
+            print('Peak finding fails:\n', E)
+            return JsonResponse({'processing_status': 'fail'}, status=500)
+
         df = processor.result_df
 
         # This might not be needed since ordering is conserved
@@ -483,5 +501,7 @@ class FindPeaks(APIView):
 
         if serializer.is_valid():
             return JsonResponse(serializer.data, safe=False, status=200)
+
+        print('serializer failing', serializer.errors)
         return JsonResponse({'processing_status': 'fail'}, status=500)
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Output } from '@angular/core';
+import {Component, OnInit, ViewChild, Output, ElementRef} from '@angular/core';
 import {TransitionViewService} from './transition-view.service';
 import {CommonService, PeakData} from '../common.service';
 import { TransitionData } from '../common.service';
@@ -6,6 +6,7 @@ import {MatPaginator} from '@angular/material/paginator';
 import {TransitionPlotComponent} from './transition-plot/transition-plot.component';
 import {SampleInfo, SampleInfoComponent} from '../sample-info/sample-info.component';
 import {FormControl, FormGroup, FormArray} from '@angular/forms';
+import {ProcessingSettingsComponent, TransitionProcessingSettings} from '../processing-settings/processing-settings.component';
 
 
 
@@ -21,9 +22,13 @@ export class TransitionViewComponent implements OnInit {
   filterPosArr: string[] = [];
   samples: SampleInfo[] = [];
   peaks: PeakData[] = [];
+  transitionProcessingSettings: TransitionProcessingSettings;
 
-  constructor(private transitionViewService: TransitionViewService,
+  @ViewChild('transitionPlot', {static: false}) transitionPlot: any;
+
+  constructor(// private transitionViewService: TransitionViewService,
               private commonService: CommonService,
+              // private processingSettingsComponent: ProcessingSettingsComponent,
               // private sampleInfoComponent: SampleInfoComponent
   ) {
     commonService.transitionsProcessed$.subscribe(data => this.ngOnInit());
@@ -34,12 +39,15 @@ export class TransitionViewComponent implements OnInit {
     commonService.peakFindingComplete$.subscribe(data => {
       this.peaks = this.commonService.peakData;
     });
+    // processingSettingsComponent.transitionProcessingSettingsChanged$.subscribe(settings =>{
+    //   this.transitionProcessingSettings = settings;
+    // });
   }
 
   ngOnInit(): void {
     this.plotDataType = 'regular';
     if (this.commonService.selected) {
-      this.importTransitionData();
+      this.importData();
       // this.makeFilters(this.commonService.sampleInfoData)
     }
   }
@@ -48,13 +56,15 @@ export class TransitionViewComponent implements OnInit {
     this.filterPosArr = data;
   }
 
-  importTransitionData(): void {
+  importData(): void {
     this.transitionData = this.commonService.transitionData;
+    this.transitionProcessingSettings = this.commonService.transitionProcessingSettings;
     console.log('delivered from common service', this.transitionData);
     // this.plot.transitionData = this.transitionData;
   }
-  testCall(): void {
-    console.log('selected data:', this.plotDataType);
+
+  recolourPlot(): void {
+    this.transitionPlot.applyColors();
   }
 
 }
