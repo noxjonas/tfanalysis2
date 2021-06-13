@@ -21,4 +21,4 @@ docker compose -f .\.docker\docker-compose.dev.yml build
 docker compose -f .\.docker\docker-compose.dev.yml up
 ```
 
-![](https://github.com/noxjonas/tfanalysis2/tree/master/etc/preview.gif)
+![](https://github.com/noxjonas/tfanalysis2/blob/master/etc/preview.gif)
