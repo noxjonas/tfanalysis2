@@ -5,12 +5,12 @@ from rest_framework.parsers import JSONParser
 # from .models import Experiment, DefaultProcessingSettings, ProcessingSettings, ProcessedDsfData
 # from .serializers import ExperimentSerializer, , ProcessingSettingsSerializer, ProcessedDsfDataSerializer
 
-from .parsers import *
+from tfanalysis.parsers import *
 
-from .models import Parsers, Experiments, InstrumentInfo, RawData, SampleInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, ProcessedTransitionData, DefaultPeakFindingSettings, PeakFindingSettings, PeakData, SampleInfoScreens
-from .serializers import ParsersSerializer, ExperimentsSerializer, SampleInfoSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer, PeakFindingSettingsSerializer, PeakDataSerializer, SampleInfoScreensSerializer
+from tfanalysis.models import Parsers, Experiments, InstrumentInfo, RawData, SampleInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, ProcessedTransitionData, DefaultPeakFindingSettings, PeakFindingSettings, PeakData, SampleInfoScreens
+from tfanalysis.serializers import ParsersSerializer, ExperimentsSerializer, SampleInfoSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer, PeakFindingSettingsSerializer, PeakDataSerializer, SampleInfoScreensSerializer
 
-from .processors import TransitionProcessor, PeakFindingProcessor
+from tfanalysis.processors import TransitionProcessor, PeakFindingProcessor
 
 
 from django.core.files.storage import default_storage
@@ -526,6 +526,8 @@ class FetchSampleInfoScreensNames(APIView):
 
     def post(self, request):
         df = pd.DataFrame(SampleInfoScreens.objects.values('screen_name', 'updated'))
+        if len(df) == 0:
+            return JsonResponse(json.loads(df.to_json(orient='records')), safe=False, status=200)
         df['count'] = df['screen_name'].map(df.groupby(['screen_name']).size().to_dict())
         df = df.drop_duplicates()
 
@@ -581,6 +583,8 @@ class DeleteSampleInfoScreen(APIView):
         SampleInfoScreens.objects.filter(screen_name=request.data['screen_name']).delete()
 
         df = pd.DataFrame(SampleInfoScreens.objects.values('screen_name', 'updated'))
+        if len(df) == 0:
+            return JsonResponse(json.loads(df.to_json(orient='records')), safe=False, status=200)
         df['count'] = df['screen_name'].map(df.groupby(['screen_name']).size().to_dict())
         df = df.drop_duplicates()
 

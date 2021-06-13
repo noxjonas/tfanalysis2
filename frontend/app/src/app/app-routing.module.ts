@@ -5,6 +5,7 @@ import { TfanalysisComponent } from './tfanalysis/tfanalysis.component';
 
 
 const routes: Routes = [
+  { path: '**', redirectTo: 'tfanalysis', pathMatch: 'full' },
   { path: 'tfanalysis', component: TfanalysisComponent },
 ];
 

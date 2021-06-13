@@ -162,13 +162,13 @@ class ExampleCsvParser(DummyParser):
     }
 
     def __init__(self, paths):
-        self.warnings = ['new warnings', 'and more of them'] #{'Position not found': ['A02', 'B03'], 'Length discrepancy': ['A01']}
+        self.warnings = ['Parsed without problems'] #{'Position not found': ['A02', 'B03'], 'Length discrepancy': ['A01']}
         self.data_type = 'fluorescence'
         self.file_df = pd.read_csv(paths[0])
         self.make_valid_pos()
         self.read_example_csv()
 
-        self.instrument_info = ['Nanotemper Panta'] #{'Instrument': 'important instrument', 'Filter': 'SYPRO Orange'}
+        self.instrument_info = ['Very old qPCR machine'] #{'Instrument': 'important instrument', 'Filter': 'SYPRO Orange'}
 
     def make_valid_pos(self):
         self.plate_rows = list(string.ascii_uppercase)

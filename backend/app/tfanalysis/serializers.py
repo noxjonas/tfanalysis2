@@ -1,6 +1,6 @@
 from rest_framework import serializers
 #from .models import Experiment, , ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
-from .models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData, SampleInfo, PeakFindingSettings, PeakData, SampleInfoScreens
+from tfanalysis.models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData, SampleInfo, PeakFindingSettings, PeakData, SampleInfoScreens
 from django.contrib.postgres.fields import ArrayField
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):

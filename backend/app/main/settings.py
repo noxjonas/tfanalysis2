@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+from django.core.management.utils import get_random_secret_key
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '&(r)76ve#+x^khpq^w#uc2_^h8fd)px-1#$nc6xtg#e8q4a&1x'
+SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", default=1)
 
 ALLOWED_HOSTS = ['*']
 
@@ -82,21 +84,23 @@ WSGI_APPLICATION = 'main.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+_host = '127.0.0.1' if DEBUG == 1 else 'db'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'django_default',
         'USER': 'postgres',
-        'PASSWORD': 'password',#'password',
-        'HOST': '127.0.0.1', #'database-1.cjahn6poqgmu.eu-west-2.rds.amazonaws.com',#'db-loadbala-1bl60jf0ota2o-415d43edbeeff679.elb.eu-west-2.amazonaws.com', #'127.0.0.1',
+        'PASSWORD': 'password',
+        'HOST': _host,
         'PORT': '5432',
     },
     'tfanalysis': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tfanalysis2',
+        'NAME': 'tfanalysis',
         'USER': 'postgres',
-        'PASSWORD': 'password',#'password',
-        'HOST': '127.0.0.1', #'database-1.cjahn6poqgmu.eu-west-2.rds.amazonaws.com',#'db-loadbala-1bl60jf0ota2o-415d43edbeeff679.elb.eu-west-2.amazonaws.com', #'127.0.0.1',
+        'PASSWORD': 'password',
+        'HOST': _host,
         'PORT': '5432',
     }
 }

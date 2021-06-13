@@ -74,7 +74,6 @@ export interface PeakData {
   providedIn: 'root'
 })
 export class CommonService {
-  private autoProcess = false;
 
   public parsers: Parsers[];
   public dataImportSuccess$: EventEmitter<boolean>;

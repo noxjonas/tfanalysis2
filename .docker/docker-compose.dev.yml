@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - db-datas:/var/lib/postgresql/data
+      - ./init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_MULTIPLE_DATABASES=django_default,tfanalysis
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  django:
+    image: tfanalysis-django
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    environment:
+      DEBUG: 0
+    command: >-
+      bash -c 'gunicorn main.wsgi:application --bind=0.0.0.0:8000'
+
+  angular:
+    image: tfanalysis-angular
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - 1930:80
+
+volumes:
+  db-datas:

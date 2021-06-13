@@ -1,11 +1,14 @@
 import inspect
 import sys
+import os
 
 from django.apps import AppConfig
 from django.db.models.signals import pre_save
+from django.db import connection
+from django.core.management import call_command
 
-# Important!
-from .parsers import *
+# Important! Do not remove
+from tfanalysis.parsers import *
 
 
 class TfanalysisConfig(AppConfig):
@@ -34,9 +37,42 @@ class TfanalysisConfig(AppConfig):
                     defaults=obj.default_peak_finding_settings
                 )
 
+    def tables_exist(self):
+        all_tables = connection.introspection.table_names()
+        if len(all_tables) > 0:
+            print('Tables exist?', all_tables)
+            return True
+        else:
+            print('\nTables for tfanalysis do not exist...')
+            return False
+
+    def do_first_migrations(self):
+        if os.path.isdir('tfanalysis/migrations'):
+            print('\nAttempting to make and do initial migrations...')
+            migrations = [i for i in os.listdir('tfanalysis/migrations') if '__' not in i]
+
+            if len(migrations) == 1 and migrations[0] == '0001_initial.py':
+                print('\nOnly one migration found. Retying migrations...')
+                call_command('migrate')
+                call_command('migrate', app_label='tfanalysis', database='tfanalysis')
+                return True
+
+            elif len(migrations) > 0:
+                print('\nMigrations already exist... Stopping', migrations)
+                return False
+
+            else:
+                call_command('makemigrations')
+                call_command('migrate')
+                call_command('migrate', app_label='tfanalysis', database='tfanalysis')
+                return True
+
     def ready(self):
-        try:
+        if self.tables_exist():
             self.create_parsers()
-        except Exception as E:
-            # TODO: use appropriate exception
-            print('\nTables not created yet?... Skipping parser registration...\n', E)
+        else:
+            if self.do_first_migrations():
+                self.create_parsers()
+            else:
+                print('\nFailed to start. Terminating... from tfanalysis.apps.py')
+                sys.exit(1)

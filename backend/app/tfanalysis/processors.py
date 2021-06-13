@@ -3,7 +3,7 @@ import time
 import numpy as np
 import pandas as pd
 # from .models import Experiment, SampleInfo, ProcessingSettings, ProcessedDsfData
-from .models import Experiments, SampleInfo, ProcessedTransitionData, RawData, TransitionProcessingSettings, PeakFindingSettings, PeakData
+from tfanalysis.models import Experiments, SampleInfo, ProcessedTransitionData, RawData, TransitionProcessingSettings, PeakFindingSettings, PeakData
 import json
 from scipy import signal
 from django.db import connection
@@ -11,13 +11,12 @@ pd.options.display.max_rows = 20
 pd.options.display.max_columns = 20
 
 from django import db
-
-import os, psutil
-#plt.close("all")
+import os
 import matplotlib.pyplot as plt
 
 
-#TODO: Capture errors to send back to front-end
+# TODO: Capture errors to send back to front-end
+
 
 class TransitionProcessor:
 

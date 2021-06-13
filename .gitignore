@@ -197,3 +197,9 @@ tools/gulp-tasks/cldr/cldr-data/
 
 # Husky
 .husky/_
+
+
+# Random READMEs
+frontend/README.md
+frontend/app/README.md
+backend/app/README.md

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+import tfanalysis.views as views
 
 urlpatterns = [
     path('tfanalysis/fetchparsers/', views.FetchParsers.as_view()),
