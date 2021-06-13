@@ -1,0 +1,62 @@
+<div>
+  <div class="row">
+    <div class="column">
+
+      <mat-form-field appearance="standard">
+        <mat-label>New screen name</mat-label>
+        <input matInput placeholder="New screen name must be unique" [formControl]="newScreenName">
+      </mat-form-field>
+      <div *ngIf="notUniqueError" style="color: #F44336; font-size: 15px">
+        Screen with name '{{newScreenName.value}}' already exists. Either remove it first, or use a different name!
+      </div>
+
+
+      <div mat-dialog-actions>
+        <button mat-raised-button (click)="onNoClick()" color="accent" >Cancel</button>
+        <button mat-raised-button (click)="saveScreen()" color="primary" >Save current entries as screen</button>
+      </div>
+    </div>
+  </div>
+
+
+    <div *ngIf="dataSource" class="row" style="margin-top: 20px;">
+
+      <mat-form-field>
+        <mat-label>Filter</mat-label>
+        <input matInput (keyup)="applyFilter($event)" #input>
+      </mat-form-field>
+
+      <table mat-table [dataSource]="dataSource">
+
+        <ng-container matColumnDef="screen_name">
+          <th mat-header-cell *matHeaderCellDef> Screen name </th>
+          <td mat-cell *matCellDef="let row"> {{row.screen_name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="count">
+          <th mat-header-cell *matHeaderCellDef> Sample count </th>
+          <td mat-cell *matCellDef="let row"> {{row.count}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="updated">
+          <th mat-header-cell *matHeaderCellDef> Uploaded </th>
+          <td mat-cell *matCellDef="let row"> {{row.updated | date:'yyyy-MM-dd'}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="delete">
+          <th mat-header-cell *matHeaderCellDef [width]="50"> Delete? </th>
+          <td mat-cell *matCellDef="let row" [width]="50">
+            <button *ngIf="!confirm || row.screen_name !== confirm" mat-raised-button (click)="confirmCheck(row.screen_name)" color="primary" style="width: 80px">
+              <i style="font-size: 15px; color: #ffffff;" class="material-icons">delete</i></button>
+            <button *ngIf="confirm && row.screen_name === confirm" mat-raised-button (click)="deleteScreen(confirm)" color="warn" style="width: 80px">
+              Confirm</button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+      </table>
+    </div>
+
+
+</div>

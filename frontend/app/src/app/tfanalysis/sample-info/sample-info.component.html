@@ -1,26 +1,39 @@
-<div *ngIf="sampleInfo">
+<div [hidden]="!sampleInfo">
 
   <div>
 
-    <div style="display: inline-flex">
-      <span>Sample info imports:</span>
+    <div class="outer">
+      <div style="margin-left: 25px">
+        <button style="height: 50px" class="inner" mat-raised-button color="primary" (click)="saveSampleInfo()">Save changes</button>
+      </div>
 
-      <!--    SELECT SCREEN (None currently)-->
+<!--      <div class="inner" style="margin-left: 50px">-->
+<!--        <h2 class="inner">-->
+<!--&lt;!&ndash;          Sample info imports&ndash;&gt;-->
+<!--        </h2>-->
+<!--      </div>-->
 
-      <!--    SAVE CURRENT AS SCREEN (None currently)-->
+      <div style="margin-left: 50px">
+        <button style="height: 50px" class="inner" mat-raised-button color="accent" (click)="displayUploadDialog()">Import screen or file</button>
+      </div>
 
-      <!--    IMPORT FROM FILE (None currently)-->
+      <div style="margin-left: 50px">
+        <button style="height: 50px" class="inner" mat-raised-button color="accent" (click)="displayScreenExportDialog()">Manage screens</button>
+      </div>
 
     </div>
 
+    <mat-divider style="margin-top: 10px"></mat-divider>
 
+    <!--    GENERATE GROUPS    -->
+    <div class="outer">
+      <div class="inner" style="margin-left: 25px">
+        <h2>Generate groups</h2>
+      </div>
 
-    <div>
-  <!--    <button mat-button (click)="groupSamples()">Group samples</button>-->
       <form [formGroup]="autoGroupingForm">
-        <span>Grouping:</span>
 
-        <mat-form-field appearance="fill" >
+        <mat-form-field style="margin-left: 20px">
           <mat-label>Bulk grouping</mat-label>
             <mat-select formControlName="bulk" (click)="clearOtherGroupingOptions('bulk')">
               <mat-option *ngFor="let option of bulkReplicatesOptions" [value]="option.value">
@@ -29,12 +42,12 @@
             </mat-select>
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field style="margin-left: 20px">
           <mat-label>Group by every other</mat-label>
           <input matInput type="number" formControlName="everyOther" (click)="clearOtherGroupingOptions('everyOther')">
         </mat-form-field>
 
-        <mat-form-field>
+        <mat-form-field style="margin-left: 20px">
           <mat-label>Group by column</mat-label>
           <mat-select formControlName="column" (click)="clearOtherGroupingOptions('column')">
             <mat-option *ngFor="let option of columnReplicatesOptions" [value]="option.value">
@@ -43,16 +56,62 @@
           </mat-select>
         </mat-form-field>
 
-        <button mat-button type="submit" (click)="groupSamples()">Group samples</button>
+        <button mat-raised-button color="accent" type="submit" (click)="groupSamples()" style="margin-left: 20px; height: 40px">Group samples</button>
       </form>
     </div>
 
+    <mat-divider style="margin-bottom: 10px"></mat-divider>
 
-    <button mat-button (click)="saveSampleInfo()">Save sample info</button>
+    <!--    GENERATE NAMES    -->
+    <div class="outer" *ngIf="sampleInfo" style="overflow: auto">
+      <div class="inner" style="margin-left: 25px; min-width: 200px">
+        <h2>Generate names from</h2>
+      </div>
+
+      <form [formGroup]="autoNamingFormGroup" style="display: inline-flex; justify-content: center">
+
+        <div formArrayName="selections" *ngFor="let selection of selections.controls; let i = index;">
+
+<!--            <ng-container *ngFor="let selection of autoNamingFormGroup.get('selections')['controls']; let i = index;">-->
+            <div style="margin-left: 20px;">
+              <mat-form-field style="width: 100px !important">
+                <mat-label>Column</mat-label>
+                <mat-select [formControlName]="i">
+                  <mat-option *ngFor="let option of namingColumns" [value]="option">
+                    {{option}}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+        </div>
+
+        <!--    ADD/REMOVE CONTROLS    -->
+        <button  mat-icon-button (click)="removeAutoNamingControl()" color="warn">
+          <mat-icon>remove</mat-icon>
+        </button>
+        <button mat-icon-button (click)="addAutoNamingControl()" color="primary">
+          <mat-icon>add</mat-icon>
+        </button>
+
+        <div class="inner" style="margin: 0 10px; min-width: 120px">
+          <h2>separated by</h2>
+        </div>
+
+        <!--    SEPARATOR    -->
+        <mat-form-field style="margin-left: 10px; width: 80px !important">
+          <mat-label>Separator</mat-label>
+          <input matInput formControlName="separator">
+        </mat-form-field>
+
+        <button mat-raised-button color="accent" type="submit" (click)="autoGenerateNames()" style="margin-left: 20px; height: 40px">Apply</button>
+      </form>
+
+    </div>
 
 
+    <mat-divider style="margin-bottom: 10px"></mat-divider>
 
-    <div>
+    <div style="max-height: 100%; margin: 0 20px 0 20px">
       <hot-table class="ht_master"
         [data]="sampleInfo"
         [settings]="hotSettings"
@@ -60,18 +119,17 @@
         licenseKey="non-commercial-and-evaluation"
         >
 
-        <hot-column data="pos" [readOnly]="true" title="pos"></hot-column>
-        <hot-column data="name" title="name"></hot-column>
-
-        <hot-column data="code" title="code"></hot-column>
-        <hot-column data="description" title="description"></hot-column>
-        <hot-column data="buffer" title="buffer"></hot-column>
-        <hot-column data="condition" title="condition"></hot-column>
-        <hot-column data="concentration" title="concentration"></hot-column>
-        <hot-column data="unit" title="unit"></hot-column>
-        <hot-column data="group" title="group"></hot-column>
-        <hot-column data="manual_outlier" title="outlier" type="checkbox" class="htCenter"></hot-column>
-        <hot-column data="is_blank" title="blank" type="checkbox" class="htCenter"></hot-column>
+        <hot-column data="pos" title="pos" [readOnly]="true" [skipColumnOnPaste]="true" [width]="35"></hot-column>
+        <hot-column data="name" title="name" [wordWrap]="false"></hot-column>
+        <hot-column data="code" title="code" [wordWrap]="false"></hot-column>
+        <hot-column data="description" title="description" [wordWrap]="false"></hot-column>
+        <hot-column data="buffer" title="buffer" [wordWrap]="false"></hot-column>
+        <hot-column data="condition" title="condition" [wordWrap]="false"></hot-column>
+        <hot-column data="concentration" title="concentration" [wordWrap]="false" [width]="35"></hot-column>
+        <hot-column data="unit" title="unit" [wordWrap]="false" [width]="35"></hot-column>
+        <hot-column data="group" title="group" [wordWrap]="false" [width]="35"></hot-column>
+        <hot-column data="outlier" title="outlier" type="checkbox" [skipColumnOnPaste]="true" class="htCenter" [width]="35"></hot-column>
+        <hot-column data="blank" title="blank" type="checkbox" [skipColumnOnPaste]="true" class="htCenter" [width]="35"></hot-column>
       </hot-table>
 
     </div>

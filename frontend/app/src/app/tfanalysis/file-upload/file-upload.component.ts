@@ -25,6 +25,7 @@ export class FileUploadComponent implements OnInit, OnChanges {
     notes: new FormControl(''),
     files: new FormControl([]),
     project: new FormControl(''),
+    autoprocess: new FormControl(true),
   });
 
   constructor(private commonService: CommonService) {}

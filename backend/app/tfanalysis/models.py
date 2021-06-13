@@ -101,7 +101,7 @@ class Experiments(models.Model):
     screen = models.TextField(blank=True)
     instrument_info = models.JSONField(blank=True)
     parse_warnings = models.JSONField(blank=True)
-    # TODO: model for autoprocessing?
+    autoprocess = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'experiments'
@@ -144,12 +144,33 @@ class SampleInfo(models.Model):
     concentration = models.TextField(blank=True, null=True)
     unit = models.TextField(blank=True, null=True)
     group = models.TextField(blank=True, null=True)
-    manual_outlier = models.BooleanField()
-    is_blank = models.BooleanField()
+    outlier = models.BooleanField(blank=True, null=True)
+    blank = models.BooleanField(blank=True, null=True)
 
     class Meta:
         db_table = 'sample_info'
         ordering = ['pos']
+
+
+class SampleInfoScreens(models.Model):
+    screen_name = models.TextField()
+    updated = models.DateTimeField()
+    pos = models.CharField(max_length=16)
+    code = models.TextField(blank=True, null=True)
+    name = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    buffer = models.TextField(blank=True, null=True)
+    condition = models.TextField(blank=True, null=True)
+    concentration = models.TextField(blank=True, null=True)
+    unit = models.TextField(blank=True, null=True)
+    group = models.TextField(blank=True, null=True)
+    outlier = models.BooleanField(blank=True, null=True)
+    blank = models.BooleanField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'sample_info_screens'
+        ordering = ['-updated', 'screen_name', 'pos']
+
 
 
 class DefaultTransitionProcessingSettings(models.Model):

@@ -20,7 +20,7 @@ class TfanalysisConfig(AppConfig):
 
         for name, obj in inspect.getmembers(sys.modules[__name__]):
             if inspect.isclass(obj) and 'parser_registration_settings' in dir(obj):
-                print('Registering', obj.__name__)
+                print(f'Registering {obj.__name__}...')
                 parser_obj, created = Parsers.objects.update_or_create(
                     python_class_name=obj.__name__,
                     defaults=obj.parser_registration_settings
@@ -39,4 +39,4 @@ class TfanalysisConfig(AppConfig):
             self.create_parsers()
         except Exception as E:
             # TODO: use appropriate exception
-            print('\nTables not created yet. Skipping parser registration...\n', E)
+            print('\nTables not created yet?... Skipping parser registration...\n', E)

@@ -123,8 +123,11 @@
           <mat-label>Notes</mat-label>
           <textarea matInput type="text" formControlName="notes"></textarea>
         </mat-form-field>
-          <button mat-raised-button type="submit" color="primary" style="max-width: 100px">Update</button>
-        <!-- TODO: at this point experiment must already been selected? so adding button to 'process' is irrelevant  </button>-->
+
+        <mat-checkbox formControlName="autoprocess" style="margin: 10px 0 20px 0">Autoprocess data?</mat-checkbox>
+
+        <button mat-raised-button type="submit" color="primary" style="max-width: 100px">Update</button>
+
       </form>
 
       <button mat-raised-button (click)="deleteExperiment()" color="warn" style="margin-top: 50px; max-width: 100px">

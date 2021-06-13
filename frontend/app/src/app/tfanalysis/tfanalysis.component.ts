@@ -27,6 +27,7 @@ export class TfanalysisComponent implements AfterViewInit {
     commonService.peakFindingComplete$.subscribe(_ => (this.loading = false));
 
     commonService.experimentSelected$.subscribe(data => {
+      this.experimentSelected = false;
       this.experimentSelected = data !== null;
     });
   }

@@ -1,4 +1,4 @@
-<div *ngIf="transitionData">
+<div *ngIf="transitionData" style="margin-bottom: 100px">
 
   <div class="row">
     <div class="column" style="max-width: 35%">
@@ -18,7 +18,7 @@
       <div style="margin-left: 30px; margin-top: 5px;">
         <section>
           <h2 style="display: inline; margin-right: 20px">Plot data</h2>
-          <mat-button-toggle-group [(ngModel)]="plotDataType" [value]="'normal'" aria-label="Font Style">
+          <mat-button-toggle-group [(ngModel)]="plotDataType" aria-label="Font Style">
             <mat-button-toggle value="regular">Regularised</mat-button-toggle>
             <mat-button-toggle value="smooth">Smoothened</mat-button-toggle>
             <mat-button-toggle value="normal">Normalised</mat-button-toggle>

@@ -140,7 +140,6 @@ export class DataPreviewComponent implements OnInit, OnChanges {
     // console.log('I am probably getting null changes?', changes)
     if (changes.previewData && this.previewData) {
       if (!changes.previewData.firstChange) {
-        console.log('I should happen now only ');
         this.makeGraphs();
       }
     }

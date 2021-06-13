@@ -37,10 +37,6 @@ class TransitionProcessor:
             data_type=self.processing_settings['selected_data_type'],
         ).values()))
 
-        # print('Processing datas:', 'experiment_id', experiment_id)
-        # print('raw_data_df', raw_data_df)
-        #print('processing_settings', processing_settings)
-
         # Filter for positions if specified
         if pos_filter is not None:
             self.raw_data_df = self.raw_data_df.query('pos in @pos_filter')
@@ -80,17 +76,8 @@ class TransitionProcessor:
             column='first_der_y'
         )
 
-        # # And now find the peaks TODO: move to a separate class
-        # self.find_peaks(self.regular_df)
-        #
-        # # Generate dict for blank info
-        # self.calc_blank_info()
-
         # Prepare data for deposition into db
         self.postprocess()
-
-        # Helper testing function
-        # self.make_plot_png()
 
     def preprocess(self):
         # Converts x- and y- arrays stored as 'lists' to df used for processing
@@ -102,13 +89,6 @@ class TransitionProcessor:
                 'raw_y': row['raw_y']
             })
             self.irregular_df = self.irregular_df.append(temp_df, ignore_index=True).reset_index(drop=True)
-        # TODO: Remove
-        # if self.processing_settings['skip_outliers'] is True:
-        #     # Get positions and filter values that are outliers
-        #     df = self.sample_info_df[self.sample_info_df['manual_outlier'] == True].copy()
-        #     outliers = df['pos'].to_list()
-        #     self.irregular_df = self.irregular_df.query('pos not in @outliers')
-
 
     def regularise(self):
         # Regularise data based on settings: 'interpolation_indices', 'interpolation_method', 'interpolation_order'
@@ -217,93 +197,6 @@ class TransitionProcessor:
         self.regular_df['first_der_y'] = self.regular_df.groupby('pos')[column].transform(
             lambda x: x.diff(periods=period) / x.index.to_series().diff(periods=period)
         )
-    #
-    # def find_peaks(self, df):
-    #     # How are peak results outputed?
-    #     # Should maintain a matrix of x, y? although y can always be calculated from x?
-    #     def get_peak_list(df_):
-    #         df_ = df_.reset_index(drop=True)
-    #         x = df_['first_der_y'].to_numpy()
-    #         settings = self.processing_settings
-    #
-    #         # Convert distance from temperature to indices
-    #         # Simply get the number of indexes that span temperatures from min to min+peak_distance
-    #         # Theoretically this only needs to be called once, but it is so fast it matters not
-    #         distance = len(df_[df_['regular_x'] < (df_['regular_x'].min() + settings['peak_distance'])])
-    #
-    #         peaks, properties = signal.find_peaks(
-    #             x=x,
-    #             height=[settings['peak_height_min'], settings['peak_height_max']],
-    #             # threshold=[settings['peak_threshold_min'], settings['peak_threshold_max']],  # TODO: Place in frontend
-    #             distance=distance,
-    #             prominence=[settings['peak_prominence_min'], settings['peak_prominence_max']],
-    #             # width=[settings['peak_width_min'], settings['peak_width_max']],  # TODO: Place in frontend
-    #         )
-    #
-    #         df_ = df_[df_.index.isin(peaks)].sort_values(by='first_der_y', ascending=False)\
-    #             .head(settings['peak_number_limit'])
-    #
-    #         return df_['regular_x'].to_list()
-    #
-    #     df = df[['pos', 'regular_x', 'first_der_y']].copy()
-    #
-    #     # Conditional to convert y (or not)
-    #     if self.processing_settings['peak_mode'] == 'positive':
-    #         # Use data as is
-    #         pass
-    #     elif self.processing_settings['peak_mode'] == 'negative':
-    #         # Multiply by -1
-    #         df['first_der_y'] = df['first_der_y'] * -1
-    #     elif self.processing_settings['peak_mode'] == 'both':
-    #         # Get absolute values
-    #         df['first_der_y'] = df['first_der_y'].abs()
-    #
-    #     # Get rid of NaNs because peak finding gives random results. But previous processing returns proper df so far.
-    #     df = df.dropna()
-    #
-    #     # Iterate over df grouped by 'pos' and populate dict
-    #     self.all_peak_dict = dict()  # {'pos': [x, .., x], ..} # list len may vary
-    #     for group_pos, group_df in df.groupby('pos'):
-    #         self.all_peak_dict[group_pos] = get_peak_list(group_df)
-    #
-    #     # Now make a top peak dict for db and further calculations
-    #     self.top_peak_dict = {
-    #         k: (v[0] if len(v) > 0 else 0) for k, v in self.all_peak_dict.items()
-    #     }
-    #
-    #
-    # def calc_blank_info(self):
-    #     # Make dicts for: which is blank and deviations from blank average
-    #     # TODO: Far in the future may implement selection of peaks
-    #
-    #     # Determine whether there are any blanks
-    #     blank_df = self.sample_info_df[self.sample_info_df['is_blank'] == True].copy()
-    #
-    #     # TODO: this could be implemented better; currently flat blank is only used if no blanks are selected
-    #     if len(blank_df) == 0:
-    #         self.blank_average = 0.0
-    #
-    #     else:
-    #         # Retrieve top peak values
-    #         blank_values = [v for k, v in self.top_peak_dict.items() if k in blank_df['pos'].to_list()]
-    #         # Remove NaNs
-    #         blank_values = [i for i in blank_values if str(i) != 'nan']
-    #         # Check if it's not empty
-    #         if len(blank_values) != 0:
-    #             self.blank_average = sum(blank_values)/len(blank_values)
-    #         #Default to 0.0 otherwise
-    #         else:
-    #             self.blank_average = 0.0
-    #
-    #     self.blank_average = round(self.blank_average, 2)
-    #
-    #     self.blank_diff_dict = {
-    #         k: (round(v-self.blank_average, 2) if str(v) != 'nan' else np.nan) for k, v in self.top_peak_dict.items()
-    #     }
-    #
-    #     self.is_blank_dict = {
-    #         row['pos']: row['is_blank'] for index, row in self.sample_info_df.iterrows()
-    #     }
 
     def postprocess(self):
         # Collate relevant info into df that would be stored in the database
@@ -328,15 +221,6 @@ class TransitionProcessor:
         class_name = self.__class__.__name__
         print(class_name, "destroyed")
 
-    def make_plot_png(self):
-        # print('self.regular_df', self.regular_df)
-        df = self.regular_df
-        plt.figure()
-        df.set_index('regular_x', inplace=True)
-        df.groupby('pos')['first_der_y'].plot(legend=True)
-        plt.savefig('test.png')
-
-
 
 #PeakFindingSettings, PeakData
 class PeakFindingProcessor:
@@ -358,14 +242,9 @@ class PeakFindingProcessor:
             experiment=experiment
         ).values()))
 
-        print('processing_settings:', self.processing_settings)
-        print('\ntransitions_df\n', self.transitions_df)
-
         self.preprocess()
 
         self.truncate()
-
-        print('\nimported transition data\n', self.df)
 
         self.find_peaks()
 
@@ -475,59 +354,10 @@ def test_transition_processing():
 
     experiment_id = 2
 
-
     processor = TransitionProcessor(experiment_id)
     df = processor.result_df.copy()
     processor.__del__()
     print('Data processed in', (time.time() - start_time), 's')
-    #
-    # experiment_obj = Experiment.objects.get(id=experiment_id)
-    # processing_settings_obj = ProcessingSettings.objects.get(id=processing_settings['id'])
-    # print('experiment_obj', experiment_obj, 'processing_settings_obj', processing_settings_obj)
-    #
-    # raw_data_objs = RawData.objects.filter(
-    #     experiment_id=experiment_id,
-    #     data_type=processing_settings['selected_data_type'],
-    # )
-    # #
-    # # This might not be needed since ordering is conserved
-    # # However, in light of being explicit over implicit - objects are explicitly mapped to pos
-    #
-    # raw_data_obj_dict = {}
-    # for i in raw_data_objs:
-    #     raw_data_obj_dict[i.pos] = i
-    #
-    # db_add_time = time.time()
-    # for index, row in df.iterrows():
-    #
-    #     obj, created = ProcessedDsfData.objects.update_or_create(
-    #         # These ensure uniqueness
-    #         experiment=experiment_obj,
-    #         processing_info=processing_settings_obj,
-    #         raw_data=raw_data_obj_dict[row['pos']],
-    #         pos=row['pos'],
-    #
-    #         # These are the values added, or changed if objects already exist
-    #         defaults={
-    #             'scatter_raw_x': row['scatter_raw_x'],
-    #             'scatter_raw_y': row['scatter_raw_y'],
-    #             'scatter_regular_x': row['scatter_regular_x'],
-    #             'scatter_regular_y': row['scatter_regular_y'],
-    #             'scatter_normal_y': row['scatter_normal_y'],
-    #             'scatter_smooth_y': row['scatter_smooth_y'],
-    #             'scatter_first_der_y': row['scatter_first_der_y'],
-    #             'all_peaks': row['all_peaks'],
-    #             'top_peak': row['top_peak'],
-    #         },
-    #     )
-    #     db.reset_queries()
-    #     print('Adding single entry takes', (time.time() - db_add_time), 's.')
-    #     db_add_time = time.time()
-    #
-    # print('Memory usage after:', psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2)
-    #
-    # execution_time = (time.time() - start_time)
-    # print('\nFinished in', str(execution_time)+'s')
 
 
 """

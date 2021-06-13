@@ -7,8 +7,8 @@ from rest_framework.parsers import JSONParser
 
 from .parsers import *
 
-from .models import Parsers, Experiments, InstrumentInfo, RawData, SampleInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, ProcessedTransitionData, DefaultPeakFindingSettings, PeakFindingSettings, PeakData
-from .serializers import ParsersSerializer, ExperimentsSerializer, SampleInfoSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer, PeakFindingSettingsSerializer, PeakDataSerializer
+from .models import Parsers, Experiments, InstrumentInfo, RawData, SampleInfo, DefaultTransitionProcessingSettings, TransitionProcessingSettings, ProcessedTransitionData, DefaultPeakFindingSettings, PeakFindingSettings, PeakData, SampleInfoScreens
+from .serializers import ParsersSerializer, ExperimentsSerializer, SampleInfoSerializer, TransitionProcessingSettingsSerializer, ProcessedTransitionDataSerializer, PeakFindingSettingsSerializer, PeakDataSerializer, SampleInfoScreensSerializer
 
 from .processors import TransitionProcessor, PeakFindingProcessor
 
@@ -16,6 +16,9 @@ from .processors import TransitionProcessor, PeakFindingProcessor
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
+
+
 import time
 from rest_framework import status
 from rest_framework.response import Response
@@ -78,6 +81,7 @@ class UploadData(APIView):
             notes=request.POST.get('notes'),
             instrument_info=json.dumps(data.instrument_info) if hasattr(data, 'instrument_info') else json.dumps({}),
             parse_warnings=json.dumps(data.warnings) if hasattr(data, 'warnings') else json.dumps({}),
+            autoprocess=True if request.POST.get('autoprocess') == 'true' else False,
         )
         experiment.save()
 
@@ -112,16 +116,8 @@ class UploadData(APIView):
                 experiment=experiment,
                 raw_data=RawData.objects.get(pk=row['raw_data_id']),
                 pos=row['pos'],
-                # code='',
-                # name='',
-                # description='',
-                # buffer='',
-                # condition='',
-                # concentration='',
-                # unit='',
-                # group='',
-                manual_outlier=False,
-                is_blank=False,
+                outlier=False,
+                blank=False,
             )
             bulk.append(temp_obj)
 
@@ -227,8 +223,8 @@ class UpdateSampleInfo(APIView):
                 concentration=i['concentration'],
                 unit=i['unit'],
                 group=i['group'],
-                manual_outlier=False if i['manual_outlier'] is None else i['manual_outlier'],
-                is_blank=False if i['is_blank'] is None else i['is_blank'],
+                outlier=False if i['outlier'] is None else i['outlier'],
+                blank=False if i['blank'] is None else i['blank'],
             )
 
         return JsonResponse(serializer.data, safe=False, status=200)
@@ -424,7 +420,7 @@ class UpdatePeakFindingSettings(APIView):
             peak_data = PeakData.objects.filter(experiment=experiment).all()
             peak_data.delete()
 
-        return JsonResponse(serializer.data, status=200)
+        return JsonResponse(PeakFindingSettingsSerializer(settings).data, status=200)
 
 
 class ResetPeakFindingSettings(APIView):
@@ -506,4 +502,99 @@ class FindPeaks(APIView):
 
         print('serializer failing', serializer.errors)
         return JsonResponse({'processing_status': 'fail'}, status=500)
+
+
+class UploadSampleInfo(APIView):
+
+    def post(self, request):
+        file_obj = request.FILES.getlist('files')[0]
+        path = settings.MEDIA_ROOT + default_storage.save(file_obj.name, ContentFile(file_obj.read()))
+
+        try:
+            data = SampleInfoUploadParser(path, True if request.data['column_names'] == 'true' else False)
+            os.remove(path) # Cleanup file
+
+        except Exception as E:
+
+            os.remove(path) # Cleanup file
+            return JsonResponse({'custom_message': 'Sample info import failed', 'detail': [str(E)]}, status=400)
+
+        return JsonResponse(data.json, safe=False, status=200)
+
+
+class FetchSampleInfoScreensNames(APIView):
+
+    def post(self, request):
+        df = pd.DataFrame(SampleInfoScreens.objects.values('screen_name', 'updated'))
+        df['count'] = df['screen_name'].map(df.groupby(['screen_name']).size().to_dict())
+        df = df.drop_duplicates()
+
+        return JsonResponse(json.loads(df.to_json(orient='records')), safe=False, status=200)
+
+
+class SaveSampleInfoScreen(APIView):
+
+    def post(self, request):
+        serializer = SampleInfoScreensSerializer(data=request.data, many=True, allow_null=True, ignore_fields=['id'])
+
+        if not serializer.is_valid():
+            print('Save sample info screen serializer failing', serializer.errors)
+            return Response({'update_status': 'fail'}, status=400)
+
+        # Make sure the name does not already exist. Although this is already done on front-end
+        if len(SampleInfoScreens.objects.filter(screen_name=serializer.data[0]['screen_name']).all()) > 0:
+            return Response({'update_status': 'fail'}, status=409)
+
+        now = timezone.now()
+        bulk = []
+        for i in serializer.data:
+            temp_obj = SampleInfoScreens(
+                # Using conditionals here since handsontable can return null values
+                screen_name=i['screen_name'],
+                updated=now,
+                pos=i['pos'],
+                code=i['code'],
+                name=i['name'],
+                description=i['description'],
+                buffer=i['buffer'],
+                condition=i['condition'],
+                concentration=i['concentration'],
+                unit=i['unit'],
+                group=i['group'],
+                outlier=False if i['outlier'] is None else i['outlier'],
+                blank=False if i['blank'] is None else i['blank'],
+            )
+            bulk.append(temp_obj)
+
+        SampleInfoScreens.objects.bulk_create(bulk)
+
+        df = pd.DataFrame(SampleInfoScreens.objects.values('screen_name', 'updated'))
+        df['count'] = df['screen_name'].map(df.groupby(['screen_name']).size().to_dict())
+        df = df.drop_duplicates()
+
+        return JsonResponse(json.loads(df.to_json(orient='records')), safe=False, status=200)
+
+
+class DeleteSampleInfoScreen(APIView):
+
+    def post(self, request):
+        SampleInfoScreens.objects.filter(screen_name=request.data['screen_name']).delete()
+
+        df = pd.DataFrame(SampleInfoScreens.objects.values('screen_name', 'updated'))
+        df['count'] = df['screen_name'].map(df.groupby(['screen_name']).size().to_dict())
+        df = df.drop_duplicates()
+
+        return JsonResponse(json.loads(df.to_json(orient='records')), safe=False, status=200)
+
+
+class FetchSampleInfoScreen(APIView):
+
+    def post(self, request):
+
+        data = SampleInfoScreens.objects.filter(screen_name=request.data['screen_name']).all()
+        serializer = SampleInfoScreensSerializer(data, many=True, ignore_fields=('id', 'screen_name', 'updated'))
+
+        return JsonResponse(serializer.data, safe=False, status=200)
+
+
 

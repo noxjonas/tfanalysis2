@@ -50,7 +50,7 @@ export class TransitionViewComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    // this.plotDataType = 'regular';
+    this.plotDataType = 'regular';
     // this.importData();
     // if (this.commonService.selected) {
     //   this.importData();
@@ -59,9 +59,9 @@ export class TransitionViewComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // if (changes.transitionData) {
-    //
-    // }
+    if (changes.transitionData) {
+      this.plotDataType = 'regular';
+    }
   }
 
   sharePosFilter(data: any): void {

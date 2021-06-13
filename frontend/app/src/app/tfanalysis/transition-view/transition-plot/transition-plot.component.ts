@@ -149,7 +149,6 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log('These are the changes that are happening:', changes);
     // Separate into functions that do different things dependent on change
     if (changes.plotDataType) {
       this.changeChartData(changes.plotDataType.currentValue);
@@ -184,7 +183,6 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   // TODO: add selection whether to show raw data or not... does not add anything? that's what the preview is for
 
   makeChart(): void {
-    console.log('this is the data I deal with', this.transitionData);
     const newData: any[] = [];
     this.transitionData.forEach(sample => {
       newData.push({
@@ -283,7 +281,7 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
           return {pos: sample.pos, color: extendedColourArr[i + offset]};
         } else {
           offset += 1;
-          return {pos: sample.pos, color: '#ffffff'};
+          return {pos: sample.pos, color: '#000000'};
         }
       });
 
@@ -326,7 +324,6 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
   }
 
   drawPeaks(): void {
-    console.log('peak data imported and is to be drawn', this.peaks, this.seriesColours);
 
     if (!this.peaks) {
       return;
@@ -359,7 +356,7 @@ export class TransitionPlotComponent implements AfterViewInit, OnChanges {
         }
       }
     });
-    console.log(this.graph.layout);
+
     this.adjustPeakVisibility();
 
   }

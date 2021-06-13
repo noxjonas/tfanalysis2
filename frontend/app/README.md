@@ -51,3 +51,6 @@ npm install resize-observer-polyfill -D
 ng g directive tfanalysis/file-upload/file-upload --skipTests=true --flat=true
 
 ng g c tfanalysis/error-dialogs/standard-error-dialog --skipTests=true
+
+ng g s tfanalysis/sample-info/upload/sample-info-upload --flat=true --skipTests=true
+ng g c tfanalysis/sample-info/upload/sample-info-upload-dialog --skipTests=true

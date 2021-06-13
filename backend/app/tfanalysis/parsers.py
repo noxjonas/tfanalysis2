@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import string
 import re
+import json
 
 pd.options.display.max_rows = 20
 pd.options.display.max_columns = 20
@@ -378,12 +379,107 @@ class ParserValidator:
         print('Is parsed data valid?', self.is_valid, f'\nThere are {str(len(self.errors))} error(s)\n', '\n'.join(self.errors))
 
 
+class SampleInfoUploadParser:
+    '''
+        Parses uploaded the sample info sheet
+        Number of columns gets truncated to the number of valid columns in the sample info sheet:
+            9 basic columns + ('outlier' and 'blank')
+            If present, parser attempts to convert 'outlier' and/or 'blank' to boolean types, but drops them if it fails
+            If there are no headers altogether, 'outlier' and 'blank' cannot be imported
+
+        Columns:
+        ['pos', 'code', 'name', 'description', 'buffer', 'condition', 'concentration', 'unit', 'group', 'outlier', 'blank']
+
+        This should always return a dataframe with all valid column names, renaming invalid named columns or populating with empty columns
+
+    '''
+
+    def __init__(self, path, column_names_present):
+        valid_cols = ['pos', 'code', 'name', 'description', 'buffer', 'condition', 'concentration', 'unit', 'group', 'outlier', 'blank']
+
+        if path.endswith('.xlsx') or path.endswith('.xls'):
+            df = pd.read_excel(path, header=0 if column_names_present else None, engine='openpyxl')
+        elif path.endswith('.csv'):
+            df = pd.read_csv(path, header=0 if column_names_present else None)
+        else:
+            raise Exception('Unsupported file type! Can only parse .csv, .xlsx and .xls files')
+
+        # If there are no headers, prepare the json
+        if not column_names_present:
+            # Limit the number of columns that will be imported. i.e. 9, since we don't know which ones could be bool
+            if len(df.columns) > len(valid_cols)-2:
+                df = df.drop(df.columns[len(valid_cols)-2:], axis=1)
+                df.columns = valid_cols[:len(valid_cols)-2]
+            else:
+                df.columns = valid_cols[:len(df.columns)]
+
+            df['outlier'], df['blank'] = False, False
+
+            # Add any missing valid columns as empty fields
+            for col in [i for i in valid_cols if i not in df.columns]:
+                df[col] = np.nan
+
+            # Finally, rearrange columns appropriately and convert to str
+            df = df[valid_cols]
+            for col in [i for i in valid_cols if i not in ['outlier', 'blank']]:
+                df[col] = df[col].apply(str).replace({'nan': ''})
+
+            # TODO: why am I converting and re-converting to json?
+            self.json = json.loads(df.to_json(orient='records'))
+            return
+
+        # Normalise column names
+        df.columns = [str(i).lower().replace(' ', '') for i in df.columns]
+
+        # If present, convert 'outlier'' and/or 'blank' to boolean values
+        for bool_col in ['outlier', 'blank']:
+            if bool_col in df.columns:
+                try:
+                    df[bool_col] = self.ensure_bool(df[bool_col])
+                except:
+                    # Drop the column if conversion fails
+                    df = df.drop(bool_col)
+            else:
+                # Add empty column otherwise
+                df[bool_col] = False
+
+        # Rename as many 'hanging' columns with invalid names as possible
+        hanging_cols = [i for i in df.columns if i not in valid_cols]
+        remaining_valid_cols = [i for i in valid_cols if i not in df.columns]
+        df = df.rename(columns={
+            hanging_cols[remaining_valid_cols.index(i)]: i for i in remaining_valid_cols[0:len(hanging_cols)]
+        })
+
+        # Add any missing valid columns as empty fields; bool columns are already added at this point.
+        for col in [i for i in valid_cols if i not in df.columns]:
+            df[col] = np.nan
+
+        # Finally, rearrange columns appropriately and convert to str
+        df = df[valid_cols]
+        for col in [i for i in valid_cols if i not in ['outlier', 'blank']]:
+            df[col] = df[col].apply(str).replace({'nan': ''})
+
+        self.json = json.loads(df.to_json(orient='records'))
+
+    def ensure_bool(self, series):
+        # Although theoretically pandas takes care of this itself, just in case... ?
+        mapping = {'false': 0, 'no': 0, 'true': 1, 'yes': 1, 'outlier': 1, 'blank': 1}
+        series = series.map(mapping)
+        series = series.fillna(0).astype('bool')
+        return series
+
+
+
+
+
 if __name__ == '__main__':
-    test_obj = ExampleCsvParser(['../../uploads/large_dataset.csv'])
-    test_obj = DummyParser(['../../uploads/large_dataset.csv'])
-    #print('Test output df:\n\n', test_obj.df)
-    #print('Has instrument_info:', hasattr(test_obj, 'instrument_info'))
-    ParserValidator(test_obj)
+    # test_obj = ExampleCsvParser(['../../uploads/large_dataset.csv'])
+    # test_obj = DummyParser(['../../uploads/large_dataset.csv'])
+    # #print('Test output df:\n\n', test_obj.df)
+    # #print('Has instrument_info:', hasattr(test_obj, 'instrument_info'))
+    # ParserValidator(test_obj)
+
+    test_sample_info_parser = SampleInfoUploadParser('../../uploads/small_sample_info.xlsx', True)
 
 
 

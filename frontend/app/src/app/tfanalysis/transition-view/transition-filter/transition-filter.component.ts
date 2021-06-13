@@ -75,7 +75,7 @@ export class TransitionFilterComponent implements OnInit, OnChanges {
 
     // Protect blanks if needed
     if (this.protectBlanks) {
-      let blanks = this.samples.filter(x => x.is_blank)
+      let blanks = this.samples.filter(x => x.blank)
       for (let blank of blanks) {
         this.filterPosArr.indexOf(blank.pos) === -1 ? this.filterPosArr.push(blank.pos) : null;
       }
@@ -95,7 +95,6 @@ export class TransitionFilterComponent implements OnInit, OnChanges {
   }
 
   makeFilters(data: SampleInfo[]) {
-    console.log('sample info imported to transition view', data);
     this.filterOptions = [];
     // @ts-ignore
     const columnData = Object.fromEntries(Object.keys(data[0]).map(key => [key, data.map(o => o[key])]))

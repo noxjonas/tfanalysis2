@@ -27,6 +27,7 @@ export class SelectExperimentComponent implements OnInit, OnChanges {
     project: new FormControl(''),
     user: new FormControl(''), // Cannot be changed
     notes: new FormControl(''),
+    autoprocess: new FormControl(true),
   });
   instrumentInfo: any; // Parsed from JSON
   parseWarnings: any; // Parsed from JSON
@@ -119,6 +120,7 @@ export class SelectExperimentComponent implements OnInit, OnChanges {
     this.experimentUpdateForm.get('project').setValue(this.selectedExperiment.project);
     this.experimentUpdateForm.get('user').setValue(this.selectedExperiment.user);
     this.experimentUpdateForm.get('notes').setValue(this.selectedExperiment.notes);
+    this.experimentUpdateForm.get('autoprocess').setValue(this.selectedExperiment.autoprocess);
     this.instrumentInfo = JSON.parse(this.selectedExperiment.instrument_info);
     this.parseWarnings = JSON.parse(this.selectedExperiment.parse_warnings);
   }

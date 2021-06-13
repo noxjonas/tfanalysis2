@@ -10,7 +10,6 @@ import { FileUploadComponent } from './tfanalysis/file-upload/file-upload.compon
 
 import { HttpClientModule } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
-import { FilePickerModule } from 'ngx-awesome-uploader';
 import { SelectExperimentComponent } from './tfanalysis/select-experiment/select-experiment.component';
 import {MatTableModule} from '@angular/material/table';
 import {CommonService} from './tfanalysis/common.service';
@@ -21,21 +20,27 @@ import { ProcessingSettingsComponent } from './tfanalysis/processing-settings/pr
 import { TransitionViewComponent } from './tfanalysis/transition-view/transition-view.component';
 import { TransitionPlotComponent } from './tfanalysis/transition-view/transition-plot/transition-plot.component';
 // import {NgxEchartsModule} from "ngx-echarts";
-import { ChartsModule } from 'ng2-charts';
-import { DragToSelectModule } from 'ngx-drag-to-select';
+// import { ChartsModule } from 'ng2-charts';
+// import { DragToSelectModule } from 'ngx-drag-to-select';
 import { TransitionFilterComponent } from './tfanalysis/transition-view/transition-filter/transition-filter.component';
 // import {UplotGenService} from "./tfanalysis/transition-view/transition-plot/uplot-gen.service";
 
+// @ts-ignore
 import * as PlotlyJS from 'plotly.js-dist';
 import { PlotlyModule } from 'angular-plotly.js';
+PlotlyModule.plotlyjs = PlotlyJS;
+
 import { FileUploadDirective } from './tfanalysis/file-upload/file-upload.directive';
 import { DeleteConfirmDialogComponent } from './tfanalysis/select-experiment/delete-confirm-dialog.component';
 import { DataPreviewComponent } from './tfanalysis/processing-settings/data-preview/data-preview.component';
 import { SampleSelectorComponent } from './tfanalysis/processing-settings/sample-selector/sample-selector.component';
 import { PeakFindingSettingsComponent } from './tfanalysis/transition-view/peak-finding-settings/peak-finding-settings.component';
 import { StandardErrorDialogComponent } from './tfanalysis/error-dialogs/standard-error-dialog/standard-error-dialog.component';
+import { SampleInfoUploadDialogComponent } from './tfanalysis/sample-info/upload/sample-info-upload-dialog.component';
+import {DragDropModule} from '@angular/cdk/drag-drop';
+import { SampleInfoScreenExportDialogComponent } from './tfanalysis/sample-info/upload/sample-info-screen-export-dialog.component';
+// import { TransitionPlotComponent } from './tfanalysis/transition-view/transition-plot/transition-plot.component';
 
-PlotlyModule.plotlyjs = PlotlyJS;
 
 @NgModule({
   declarations: [
@@ -54,6 +59,8 @@ PlotlyModule.plotlyjs = PlotlyJS;
     SampleSelectorComponent,
     PeakFindingSettingsComponent,
     StandardErrorDialogComponent,
+    SampleInfoUploadDialogComponent,
+    SampleInfoScreenExportDialogComponent,
   ],
   imports: [
     BrowserModule,
@@ -62,13 +69,13 @@ PlotlyModule.plotlyjs = PlotlyJS;
     MaterialModule,
     HttpClientModule,
     ReactiveFormsModule,
-    FilePickerModule,
     MatTableModule,
     HotTableModule,
     FormsModule,
-    ChartsModule,
-    DragToSelectModule.forRoot(),
-    PlotlyModule
+    // ChartsModule,
+    // DragToSelectModule.forRoot(),
+    PlotlyModule,
+    DragDropModule
   ],
   providers: [
     CommonService

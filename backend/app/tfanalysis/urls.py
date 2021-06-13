@@ -10,6 +10,12 @@ urlpatterns = [
 
     path('tfanalysis/fetchsampleinfo/', views.FetchSampleInfo.as_view()),
     path('tfanalysis/updatesampleinfo/', views.UpdateSampleInfo.as_view()),
+    path('tfanalysis/uploadsampleinfo/', views.UploadSampleInfo.as_view()),
+    path('tfanalysis/savesampleinfoscreen/', views.SaveSampleInfoScreen.as_view()),
+    path('tfanalysis/fetchsampleinfoscreensnames/', views.FetchSampleInfoScreensNames.as_view()),
+    path('tfanalysis/deletesampleinfoscreen/', views.DeleteSampleInfoScreen.as_view()),
+    path('tfanalysis/fetchsampleinfoscreen/', views.FetchSampleInfoScreen.as_view()),
+
 
     path('tfanalysis/fetchtransitionprocessingsettings/', views.FetchTransitionProcessingSettings.as_view()),
     path('tfanalysis/updatetransitionprocessingsettings/', views.UpdateTransitionProcessingSettings.as_view()),
@@ -21,4 +27,7 @@ urlpatterns = [
     path('tfanalysis/updatepeakfindingsettings/', views.UpdatePeakFindingSettings.as_view()),
     path('tfanalysis/resetpeakfindingsettings/', views.ResetPeakFindingSettings.as_view()),
     path('tfanalysis/findpeaks/', views.FindPeaks.as_view()),
+
+
+
 ]

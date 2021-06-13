@@ -1,6 +1,6 @@
 from rest_framework import serializers
 #from .models import Experiment, , ProcessingSettings, ProcessedData, DefaultProcessingSettings, ProcessedDsfData
-from .models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData, SampleInfo, PeakFindingSettings, PeakData
+from .models import Parsers, Experiments, TransitionProcessingSettings, ProcessedTransitionData, RawData, SampleInfo, PeakFindingSettings, PeakData, SampleInfoScreens
 from django.contrib.postgres.fields import ArrayField
 
 class DynamicFieldsModelSerializer(serializers.ModelSerializer):
@@ -41,6 +41,14 @@ class SampleInfoSerializer(DynamicFieldsModelSerializer):
     class Meta:
         model = SampleInfo
         fields = '__all__'
+
+class SampleInfoScreensSerializer(DynamicFieldsModelSerializer):
+    class Meta:
+        model = SampleInfoScreens
+        fields = '__all__'
+
+
+
 
 class TransitionProcessingSettingsSerializer(DynamicFieldsModelSerializer):
     class Meta:

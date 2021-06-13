@@ -32,7 +32,8 @@ export interface Experiment {
   notes: string;
   instrument_info?: string;
   parse_warnings?: string;
-  expanded?: false;
+  autoprocess: boolean;
+  expanded?: false; // TODO: not implemented, remove?
 }
 
 
@@ -73,6 +74,8 @@ export interface PeakData {
   providedIn: 'root'
 })
 export class CommonService {
+  private autoProcess = false;
+
   public parsers: Parsers[];
   public dataImportSuccess$: EventEmitter<boolean>;
 
@@ -120,6 +123,72 @@ export class CommonService {
       'Content-Type': 'application/json'
     })
   };
+
+  callAutoProcess(): void {
+    if (!this.selectedExperiment) {
+      return;
+    }
+
+    // TODO: currently taken from database; but perhaps this is a mistake? instead this could be entirely controlled in frontend
+    if (!this.selectedExperiment.autoprocess) {
+      // Just import the settings if autoprocessing is off
+      this.fetchSampleInfo();
+      this.fetchTransitionProcessingSettings();
+      this.fetchPeakFindingSettings();
+      return;
+    }
+
+    // TODO: generalise the loading events and perhaps shorten this...
+    this.transitionsProcessingStarted$.emit(true);
+    this.http.post<SampleInfo[]>(environment.baseApiUrl + 'tfanalysis/fetchsampleinfo/',
+      JSON.stringify({id: this.selectedExperiment.id}),
+      this.jsonHttpOptions).subscribe(sampleInfo => {
+      this.sampleInfo = sampleInfo;
+      this.sampleInfoChanged$.emit(sampleInfo);
+
+      this.http.post<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/fetchtransitionprocessingsettings/',
+        JSON.stringify({id: this.selectedExperiment.id}),
+        this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
+        this.transitionProcessingSettings = transitionProcessingSettings;
+
+        this.http.post<TransitionData[]>(environment.baseApiUrl + 'tfanalysis/processtransitiondata/',
+          JSON.stringify({id: this.selectedExperiment.id}),
+          this.jsonHttpOptions).subscribe(transitionData => {
+          this.transitionData = transitionData;
+          this.transitionsProcessed$.emit(true);
+          this.peakFindingStarted$.emit(true);
+
+          this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/fetchpeakfindingsettings/',
+            JSON.stringify({id: this.selectedExperiment.id}),
+            this.jsonHttpOptions).subscribe(peakFindingSettings => {
+            this.peakFindingSettings = peakFindingSettings;
+
+            this.http.post<PeakData[]>(environment.baseApiUrl + 'tfanalysis/findpeaks/',
+              JSON.stringify({id: this.selectedExperiment.id}),
+              this.jsonHttpOptions).subscribe(peakData => {
+              this.peakData = peakData;
+              this.peakFindingComplete$.emit(true);
+
+              // END
+
+              }, error => {
+                this.peakFindingComplete$.emit(true);
+                this.displayErrorDialog('', error);
+              });
+            }, error => {
+              this.displayErrorDialog('', error);
+            });
+          }, error => {
+            this.transitionsProcessed$.emit(true);
+            this.displayErrorDialog('', error);
+          });
+        }, error => {
+        this.displayErrorDialog('', error);
+      });
+    }, error => {
+      this.displayErrorDialog('', error);
+    });
+  }
 
   displayErrorDialog(_CALLER: string, _ERROR: any, _WIDTH?: string): void {
     const dialogRef = this.standardErrorDialog.open(StandardErrorDialogComponent, {
@@ -172,14 +241,9 @@ export class CommonService {
   }
 
   selectExperiment(experiment: Experiment): void {
-    console.log('this is the experiment being selected', experiment);
     this.selectedExperiment = experiment;
     this.experimentSelected$.emit(experiment);
-
-    // TODO: this is how auto-loading is implemented then?
-    this.fetchSampleInfo();
-    this.fetchTransitionProcessingSettings();
-    this.fetchPeakFindingSettings();
+    this.callAutoProcess();
   }
 
   updateExperimentInfo(formGroupRaw: string): void {
@@ -233,13 +297,12 @@ export class CommonService {
       JSON.stringify({id: this.selectedExperiment.id}),
       this.jsonHttpOptions).subscribe(transitionProcessingSettings => {
         this.transitionProcessingSettings = transitionProcessingSettings;
-        // TODO: Auto-process
-        this.fetchProcessedTransitionData();
     }, error => {
       this.displayErrorDialog('', error);
     });
   }
 
+  // Not used
   updateTransitionProcessingSettings(): void {
     this.http.put<TransitionProcessingSettings>(environment.baseApiUrl + 'tfanalysis/updatetransitionprocessingsettings/',
       JSON.stringify(this.transitionProcessingSettingsForm.getRawValue()),
@@ -288,8 +351,6 @@ export class CommonService {
         this.jsonHttpOptions).subscribe(transitionData => {
         this.transitionData = transitionData;
         this.transitionsProcessed$.emit(true);
-        // TODO: Auto-process
-        this.fetchPeakData();
       }, error => {
         this.transitionsProcessed$.emit(true);
         this.displayErrorDialog('', error);
@@ -310,6 +371,7 @@ export class CommonService {
     });
   }
 
+  // Not used
   updatePeakFindingSettings(): void {
     this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/',
       JSON.stringify(this.peakFindingSettingsForm.getRawValue()),
@@ -331,6 +393,7 @@ export class CommonService {
   }
 
   fetchPeakData(): void {
+    this.peakData = [];
     this.peakFindingStarted$.emit(true);
     this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/',
       JSON.stringify(this.peakFindingSettingsForm.getRawValue()),
@@ -350,39 +413,6 @@ export class CommonService {
       this.displayErrorDialog('', error);
     });
   }
-
-
-
-
-
-  //
-  // fetchPeakFindingSettings(): Observable<PeakFindingSettings> {
-  //   return this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/fetchpeakfindingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  // }
-  // updatePeakFindingSettings(formGroupRaw: string): Observable<any> {
-  //   return this.http.put<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/updatepeakfindingsettings/', JSON.stringify(formGroupRaw), this.jsonHttpOptions);
-  // }
-  // resetPeakFindingSettings(): Observable<any> {
-  //   return this.http.post<PeakFindingSettings>(environment.baseApiUrl + 'tfanalysis/resetpeakfindingsettings/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  // }
-
-  // private postFindPeaks(): Observable<PeakData[]> {
-  //   this.peakFindingStarted$.emit(true);
-  //   return this.http.post<PeakData[]>(environment.baseApiUrl + 'tfanalysis/findpeaks/', JSON.stringify({id: this.selected.id}), this.jsonHttpOptions);
-  // }
-  //
-  // fetchPeakData(): void {
-  //   this.postFindPeaks().subscribe(
-  //     data => {
-  //       this.peakData = data;
-  //       this.peakFindingComplete$.emit(true);
-  //     }, error => {
-  //       // TODO: implement error dialog
-  //       console.log('Peak finding failed');
-  //       this.peakFindingComplete$.emit(true);
-  //     }
-  //   );
-  // }
 
 
 
